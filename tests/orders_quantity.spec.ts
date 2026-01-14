@@ -17,18 +17,18 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
   await page.getByRole('link', { name: 'Orders' }).click();
   await page.locator('fuse-navbar').getByRole('button').click();
   await page.locator('.fuse-sidebar-overlay').click();
-
+  await page.waitForTimeout(3000);
 
 	// Filter by something to ensure enough entries but not so many
 	// Filter by Status = Billed
   await page.locator('i').nth(5).click();
-  await page.locator('.ng-tns-c403-165.p-multiselect-trigger').click();
-	await page.locator('.ng-tns-c403-165.p-multiselect-trigger').click();
-
+	await page.waitForTimeout(3000);
+  await page.getByText('Select options').nth(5).click();
+	await page.getByText('Select options').nth(5).click();
   await page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first().click();
   await page.waitForTimeout(1000);
 	await page.getByText('Search', { exact: true }).click();
-
+  await page.waitForTimeout(2000);
 	
   // Get total entries
   const showingText = page.locator('text=Showing');
@@ -51,7 +51,7 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
   while (processed_entries < total_entries) {
     loop_counter++;
     if (loop_counter > max_loops) throw new Error('Too many loops! Possible infinite loop.');
-
+		await page.waitForTimeout(5000); // wait for page to load
     // Click only the header checkbox (select all rows on this page)
     const headerCheckbox = page.locator('th p-tristatecheckbox .p-checkbox-box');
     const isChecked = await headerCheckbox.getAttribute('aria-checked');
@@ -75,7 +75,6 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
     // Go to next page if needed
     if (processed_entries < total_entries) {
       await page.locator('.p-ripple.p-element.p-paginator-next').click();
-      await page.waitForTimeout(1000); // short wait for page transition
     }
   }
 
