@@ -50,7 +50,7 @@ async function applyBilledStatusFilter(page: Page): Promise<void> {
   await page.waitForTimeout(1000);
   
 	await page.getByText('Select options').nth(5).click();
-  await page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first().click();
+  await page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first().click({ timeout: 5000 });
   await page.waitForTimeout(1000); // Give the UI time to register the click
   
   // Apply filter
