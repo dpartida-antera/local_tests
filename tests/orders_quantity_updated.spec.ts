@@ -4,7 +4,6 @@ import { ConfigLoader } from '../helper/ConfigLoader';
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 
 // Constants
-const PAGE_SIZES = [15, 30, 50, 100];
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_LOGIN = 10000;
 const TIMEOUT_NAVIGATION = 7000;
@@ -121,6 +120,42 @@ async function goToNextPage(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
 }
 
+async function goToFirstPage(page: Page): Promise<void> {
+  const firstButton = page.locator('.p-ripple.p-element.p-paginator-first');
+  
+  // Check if button is enabled before clicking
+  const isDisabled = await firstButton.evaluate(el => el.hasAttribute('disabled'));
+  
+  if (!isDisabled) {
+    await firstButton.click({ timeout: TIMEOUT_NAVIGATION });
+    await page.waitForLoadState('networkidle');
+  }
+}
+
+async function getAvailablePageSizes(page: Page): Promise<number[]> {
+  const dropdown = page.locator('.p-paginator .p-dropdown-trigger');
+  await dropdown.click({ timeout: TIMEOUT_NAVIGATION });
+  await page.waitForTimeout(500);
+  
+  // Get page size options specifically from the pagination dropdown
+  const paginationItems = page.locator('.p-dropdown-items li[role="option"]');
+  const count = await paginationItems.count();
+  const sizes: number[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const text = await paginationItems.nth(i).getAttribute('aria-label');
+    if (text) {
+      sizes.push(Number(text));
+    }
+  }
+  
+  // Close the dropdown by clicking elsewhere
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  
+  return sizes.sort((a, b) => b - a);
+}
+
 // Main Test
 test('orders_quantity_test', async ({ page }: { page: Page }) => {
   test.setTimeout(480000);
@@ -138,52 +173,62 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
     // Get total entries
     const total_entries = await getTotalEntries(page);
 
+    // Get available page sizes from dropdown
+    const PAGE_SIZES = await getAvailablePageSizes(page);
+    console.log(`Available page sizes: ${PAGE_SIZES.join(', ')}`);
 
-    await page.locator('.p-dropdown-trigger').click();
-    // Set page size to 100
-    await setPageSize(page, PAGE_SIZE);
+    // Test each pagination size
+    for (const PAGE_SIZE of PAGE_SIZES) {
+      console.log(`\n========== Testing with page size: ${PAGE_SIZE} ==========`);
 
-    // Loop through pages and verify quantities
-    let processed_entries = 0;
-    let loop_counter = 0;
-    const max_loops = Math.ceil(total_entries / PAGE_SIZE) + MAX_LOOPS_MULTIPLIER;
+      // Set page size
+      await setPageSize(page, PAGE_SIZE);
 
-    while (processed_entries < total_entries) {
-      loop_counter++;
-      
-      if (loop_counter > max_loops) {
-        throw new Error(
-          `Exceeded maximum loop count of ${max_loops}. ` +
-          `Processed: ${processed_entries}, Total: ${total_entries}`
-        );
+      // Go to first page
+      await goToFirstPage(page);
+      let processed_entries = 0;
+      let loop_counter = 0;
+      const max_loops = Math.ceil(total_entries / PAGE_SIZE) + MAX_LOOPS_MULTIPLIER;
+
+      while (processed_entries < total_entries) {
+        loop_counter++;
+        
+        if (loop_counter > max_loops) {
+          throw new Error(
+            `Exceeded maximum loop count of ${max_loops}. ` +
+            `Processed: ${processed_entries}, Total: ${total_entries}`
+          );
+        }
+
+        // Wait for page to load
+        await page.waitForLoadState('networkidle');
+
+        // Select all rows on current page
+        await selectAllRowsOnPage(page);
+
+        // Get number of selected entries
+        const entries_in_page = await getSelectedEntriesCount(page);
+        console.log(`Loop ${loop_counter}: Entries in page: ${entries_in_page}`);
+
+        // Verify page count matches expected
+        const remaining_entries = total_entries - processed_entries;
+        const expected_entries = remaining_entries >= PAGE_SIZE ? PAGE_SIZE : remaining_entries;
+        
+        expect(entries_in_page).toBe(expected_entries);
+
+        processed_entries += entries_in_page;
+        console.log(`Processed entries: ${processed_entries} / ${total_entries}`);
+
+        // Go to next page if needed
+        if (processed_entries < total_entries) {
+          await goToNextPage(page);
+        }
       }
 
-      // Wait for page to load
-      await page.waitForLoadState('networkidle');
-
-      // Select all rows on current page
-      await selectAllRowsOnPage(page);
-
-      // Get number of selected entries
-      const entries_in_page = await getSelectedEntriesCount(page);
-      console.log(`Loop ${loop_counter}: Entries in page: ${entries_in_page}`);
-
-      // Verify page count matches expected
-      const remaining_entries = total_entries - processed_entries;
-      const expected_entries = remaining_entries >= PAGE_SIZE ? PAGE_SIZE : remaining_entries;
-      
-      expect(entries_in_page).toBe(expected_entries);
-
-      processed_entries += entries_in_page;
-      console.log(`Processed entries: ${processed_entries} / ${total_entries}`);
-
-      // Go to next page if needed
-      if (processed_entries < total_entries) {
-        await goToNextPage(page);
-      }
+      console.log(`✓ Test passed for page size: ${PAGE_SIZE}`);
     }
 
-    console.log('Test successfully executed!');
+    console.log('\n========== All pagination sizes tested successfully! ==========');
   } catch (error) {
     console.error('Test failed with error:', error);
     throw error;
