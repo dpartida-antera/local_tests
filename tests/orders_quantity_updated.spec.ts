@@ -5,10 +5,8 @@ const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password
 
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
-const TIMEOUT_LOGIN = 10000;
 const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
-const TIMEOUT_PAGE_LOAD = 5000;
 
 // Helper Functions
 async function login(page: Page): Promise<void> {
@@ -33,7 +31,7 @@ async function navigateToOrders(page: Page): Promise<void> {
   await sidebarButton.click({ timeout: TIMEOUT_NAVIGATION });
   
   await page.locator('.fuse-sidebar-overlay').click();
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(5000);
   
   await page.waitForLoadState('networkidle');
 }
@@ -42,7 +40,7 @@ async function applyBilledStatusFilter(page: Page): Promise<void> {
   // Open filter dropdown (5th filter icon)
   const filterIcon = page.locator('i').nth(5);
   await filterIcon.click({ timeout: TIMEOUT_FILTER });
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   
   // Select filter option
   const selectOptions = page.getByText('Select options').nth(5);
