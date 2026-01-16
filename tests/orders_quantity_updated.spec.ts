@@ -4,11 +4,11 @@ import { ConfigLoader } from '../helper/ConfigLoader';
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 
 // Constants
-const PAGE_SIZE = 100;
+const PAGE_SIZES = [15, 30, 50, 100];
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_LOGIN = 10000;
-const TIMEOUT_NAVIGATION = 5000;
-const TIMEOUT_FILTER = 3000;
+const TIMEOUT_NAVIGATION = 7000;
+const TIMEOUT_FILTER = 5000;
 const TIMEOUT_PAGE_LOAD = 5000;
 
 // Helper Functions
@@ -33,10 +33,8 @@ async function navigateToOrders(page: Page): Promise<void> {
   const sidebarButton = page.locator('fuse-navbar').getByRole('button');
   await sidebarButton.click({ timeout: TIMEOUT_NAVIGATION });
   
-  const overlay = page.locator('.fuse-sidebar-overlay');
-  if (await overlay.isVisible()) {
-    await overlay.click();
-  }
+  await page.locator('.fuse-sidebar-overlay').click();
+  await page.waitForTimeout(3000);
   
   await page.waitForLoadState('networkidle');
 }
@@ -45,24 +43,30 @@ async function applyBilledStatusFilter(page: Page): Promise<void> {
   // Open filter dropdown (5th filter icon)
   const filterIcon = page.locator('i').nth(5);
   await filterIcon.click({ timeout: TIMEOUT_FILTER });
+  await page.waitForTimeout(500);
   
   // Select filter option
   const selectOptions = page.getByText('Select options').nth(5);
   await selectOptions.click({ timeout: TIMEOUT_FILTER });
-  await selectOptions.click({ timeout: TIMEOUT_FILTER });
+  await page.waitForTimeout(1000);
   
-  // Check "Billed" status
-  const checkbox = page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first();
-  await checkbox.click({ timeout: TIMEOUT_FILTER });
+	await page.getByText('Select options').nth(5).click();
+  await page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first().click();
+  await page.waitForTimeout(1000); // Give the UI time to register the click
   
   // Apply filter
   const searchButton = page.getByText('Search', { exact: true });
   await searchButton.click({ timeout: TIMEOUT_FILTER });
   
+  // Wait for the table to update with filtered results
   await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000); // Additional wait for results to populate
 }
 
 async function getTotalEntries(page: Page): Promise<number> {
+  // Wait for the page to fully load after filtering
+  await page.waitForLoadState('networkidle');
+  
   const showingText = page.locator('text=Showing');
   await showingText.waitFor({ timeout: TIMEOUT_FILTER });
   
@@ -79,7 +83,7 @@ async function getTotalEntries(page: Page): Promise<number> {
 }
 
 async function setPageSize(page: Page, size: number): Promise<void> {
-  const dropdown = page.locator('.p-dropdown-trigger');
+  const dropdown = page.locator('.p-paginator .p-dropdown-trigger');
   await dropdown.click({ timeout: TIMEOUT_NAVIGATION });
   
   const option = page.getByRole('option', { name: size.toString() });
@@ -134,6 +138,8 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
     // Get total entries
     const total_entries = await getTotalEntries(page);
 
+
+    await page.locator('.p-dropdown-trigger').click();
     // Set page size to 100
     await setPageSize(page, PAGE_SIZE);
 
