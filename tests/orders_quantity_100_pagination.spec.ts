@@ -1,7 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ConfigLoader } from '../helper/ConfigLoader';
-
-const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
+import { login } from '../helper/auth';
 
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
@@ -9,13 +7,6 @@ const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
 
 // Helper Functions
-async function login(page: Page): Promise<void> {
-  await page.goto(`${config.baseUrl}/login`, { waitUntil: 'networkidle' });
-  await page.getByLabel('Username').fill(config.user);
-  await page.getByLabel('Password').fill(config.password);
-  await page.getByRole('button', { name: /login/i }).click();
-  await page.waitForLoadState('networkidle');
-}
 
 async function navigateToOrders(page: Page): Promise<void> {
   // Open menu
