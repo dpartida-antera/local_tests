@@ -28,21 +28,71 @@ async function openMenu(page: Page): Promise<void> {
 
 async function goToSalesReport(page: Page): Promise<Page> {
 	page.getByRole('img', { name: 'Sales', exact: true }).click();
-	await page.waitForTimeout(10000);
+	// await page.waitForTimeout(10000);
 	return page;
 }
 
-async function columnsSelectedCount(page: Page): Promise<number> {
+async function columnsSelectedCount(page: Page): Promise<void> {
 	const columnsSelectedElement = await page.getByText('columns selected');
   const columnsSelectedText = await columnsSelectedElement.innerText();
-	const columnsSelectedCount = columnsSelectedText.split(' ')[0];
+	const columnsSelectedCount = Number(columnsSelectedText.split(' ')[0]);
 	console.log(`Columns selected (from text): ${columnsSelectedCount}`);
 	const selectedColumnsElement = await page.getByRole('columnheader');
 	const selectedColumnsCount = await selectedColumnsElement.count();
 	console.log(`Columns selected (from count): ${selectedColumnsCount}`);
-
-	return selectedColumnsCount;
+	expect(columnsSelectedCount).toBe(selectedColumnsCount);
 	
+}
+
+async function selectAllColumns(page: Page): Promise<void> {
+	await page.locator('.p-multiselect-trigger').click();
+  await page.getByRole('checkbox').nth(1).click();
+	await page.locator('p-multiselect').click(); // Close the dropdown
+	await page.waitForTimeout(2000); // Wait for the UI to update
+	await columnsSelectedCount(page);
+
+}
+
+async function checkColumnNames(page: Page): Promise<void> {
+	await page.locator('.p-multiselect-trigger').click();
+	await page.waitForTimeout(1000); // Wait for dropdown to open
+	
+	// Wait for list items to be visible
+	await page.getByRole('listitem').first().waitFor({ state: 'visible', timeout: 5000 });
+	
+	const columnHeaderTexts = await page.getByRole('columnheader').allTextContents();
+	console.log(`Column headers (${columnHeaderTexts.length}): ${columnHeaderTexts.join(', ')}`);
+	
+	const allListItems = await page.getByRole('listitem').all();
+	console.log(`Total list items found: ${allListItems.length}`);
+	
+	// Try different checkbox selectors
+	const checkedItemTexts = await page.getByRole('listitem').filter({ has: page.locator('.p-checkbox-checked, [aria-checked="true"]') }).allTextContents();
+	console.log(`Checked items (${checkedItemTexts.length}): ${checkedItemTexts.join(', ')}`);
+	
+	await page.locator('p-multiselect').click(); // Close the dropdown
+	await page.waitForTimeout(500);
+	
+	const trimmedChecked = checkedItemTexts.map(text => text.trim()).sort();
+	const trimmedHeaders = columnHeaderTexts.map(text => text.trim()).sort();
+	expect(trimmedChecked).toEqual(trimmedHeaders);
+}
+
+async function toggleRandomCheckboxes(page: Page, count: number = 5): Promise<void> {
+	const listItems = await page.getByRole('listitem').all();
+	const randomIndices = new Set<number>();
+	
+	while (randomIndices.size < Math.min(count, listItems.length)) {
+		randomIndices.add(Math.floor(Math.random() * listItems.length));
+	}
+	
+	for (const index of randomIndices) {
+		const checkbox = listItems[index].locator('input[type="checkbox"]');
+		await checkbox.click();
+		console.log(`Toggled checkbox at index ${index}`);
+	}
+	
+	await page.waitForTimeout(1000); // Wait for UI to update
 }
 
 test.describe('report builder suite', () => {
@@ -59,8 +109,17 @@ test.describe('report builder suite', () => {
 
 			const salesReportPage = await goToSalesReport(reportBuilderPage);
 
-			const columnsCount = await columnsSelectedCount(salesReportPage);
-			console.log(`Columns selected (final count): ${columnsCount}`);
+			await columnsSelectedCount(salesReportPage);
+			
+			await checkColumnNames(salesReportPage);
+
+			await toggleRandomCheckboxes(salesReportPage, 3);
+			
+			await checkColumnNames(salesReportPage);
+			
+			await selectAllColumns(salesReportPage);
+						
+
 		} catch (error) {
 			console.error('Error during test execution:', error);
 			throw error;
