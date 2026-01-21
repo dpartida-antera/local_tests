@@ -63,9 +63,6 @@ async function checkColumnNames(page: Page): Promise<void> {
 	const columnHeaderTexts = await page.getByRole('columnheader').allTextContents();
 	console.log(`Column headers (${columnHeaderTexts.length}): ${columnHeaderTexts.join(', ')}`);
 	
-	const allListItems = await page.getByRole('listitem').all();
-	console.log(`Total list items found: ${allListItems.length}`);
-	
 	// Try different checkbox selectors
 	const checkedItemTexts = await page.getByRole('listitem').filter({ has: page.locator('.p-checkbox-checked, [aria-checked="true"]') }).allTextContents();
 	console.log(`Checked items (${checkedItemTexts.length}): ${checkedItemTexts.join(', ')}`);
@@ -78,7 +75,7 @@ async function checkColumnNames(page: Page): Promise<void> {
 	expect(trimmedChecked).toEqual(trimmedHeaders);
 }
 
-async function toggleRandomCheckboxes(page: Page, count: number = 5): Promise<void> {
+async function toggleRandomCheckboxes(page: Page, count: number = 8): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
 	await page.waitForTimeout(1000); // Wait for dropdown to open
 	
@@ -128,7 +125,7 @@ test.describe('report builder suite', () => {
 			
 			await checkColumnNames(salesReportPage);
 
-			await toggleRandomCheckboxes(salesReportPage, 3);
+			await toggleRandomCheckboxes(salesReportPage, 8);
 			
 			await checkColumnNames(salesReportPage);
 			
