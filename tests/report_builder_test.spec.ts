@@ -53,6 +53,65 @@ async function selectAllColumns(page: Page): Promise<void> {
 
 }
 
+async function fetchFieldsFromAPI(): Promise<string[]> {
+	// Postman puts ODI2YjBkZTBkYjE2 as username, then encodes "username:" for Basic Auth
+	const username = 'ODI2YjBkZTBkYjE2';
+	const auth = Buffer.from(`${username}:`).toString('base64');
+	
+	const response = await fetch(
+		'https://dev.anterasaas.com/protected/api/v1/orders/fields',
+		{
+			method: 'GET',
+			headers: {
+				Authorization: `Basic ${auth}`,
+			}
+		}
+	);
+	
+	if (!response.ok) {
+		const errorText = await response.text();
+		console.error(`API error response: ${errorText}`);
+		throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+	}
+	
+	const data = await response.json();
+	const labelNames = data.map((field: any) => field.labelName);
+	console.log(`API returned ${labelNames.length} field labels`);
+	return labelNames;
+}
+
+async function compareColumnsWithAPI(page: Page): Promise<void> {
+	// Get all column names from the UI
+	await page.locator('.p-multiselect-trigger').click();
+	await page.waitForTimeout(1000);
+	await page.getByRole('listitem').first().waitFor({ state: 'visible', timeout: 5000 });
+	
+	const columnTexts = await page.getByRole('listitem').allTextContents();
+	const columnNames = columnTexts.map(text => text.trim()).filter(text => text.length > 0);
+	console.log(`UI columns (${columnNames.length}): ${columnNames.join(', ')}`);
+	
+	await page.locator('p-multiselect').click(); // Close the dropdown
+	await page.waitForTimeout(500);
+	
+	// Get field names from API
+	const apiLabelNames = await fetchFieldsFromAPI();
+	
+	// Check if all column names exist in API response
+	const missingColumns: string[] = [];
+	for (const columnName of columnNames) {
+		if (!apiLabelNames.includes(columnName)) {
+			missingColumns.push(columnName);
+		}
+	}
+	
+	if (missingColumns.length > 0) {
+		console.error(`Columns not found in API: ${missingColumns.join(', ')}`);
+	}
+	
+	expect(missingColumns).toEqual([]);
+	console.log('All UI columns are present in the API response ✓');
+}
+
 async function checkColumnNames(page: Page): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
 	await page.waitForTimeout(1000); // Wait for dropdown to open
@@ -130,7 +189,8 @@ test.describe('report builder suite', () => {
 			await checkColumnNames(salesReportPage);
 			
 			await selectAllColumns(salesReportPage);
-						
+			
+			await compareColumnsWithAPI(salesReportPage);
 
 		} catch (error) {
 			console.error('Error during test execution:', error);
