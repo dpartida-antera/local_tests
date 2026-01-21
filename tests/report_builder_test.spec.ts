@@ -79,6 +79,9 @@ async function checkColumnNames(page: Page): Promise<void> {
 }
 
 async function toggleRandomCheckboxes(page: Page, count: number = 5): Promise<void> {
+	await page.locator('.p-multiselect-trigger').click();
+	await page.waitForTimeout(1000); // Wait for dropdown to open
+	
 	const listItems = await page.getByRole('listitem').all();
 	const randomIndices = new Set<number>();
 	
@@ -87,11 +90,23 @@ async function toggleRandomCheckboxes(page: Page, count: number = 5): Promise<vo
 	}
 	
 	for (const index of randomIndices) {
-		const checkbox = listItems[index].locator('input[type="checkbox"]');
-		await checkbox.click();
+		// Try clicking the checkbox div or the list item itself
+		const listItem = listItems[index];
+		const checkbox = listItem.locator('.p-checkbox, .p-checkbox-box, input[type="checkbox"]').first();
+		
+		// Check if checkbox exists, otherwise click the list item
+		const checkboxCount = await checkbox.count();
+		if (checkboxCount > 0) {
+			await checkbox.click();
+		} else {
+			await listItem.click();
+		}
+		
 		console.log(`Toggled checkbox at index ${index}`);
+		await page.waitForTimeout(300); // Small delay between clicks
 	}
 	
+	await page.locator('p-multiselect').click(); // Close the dropdown
 	await page.waitForTimeout(1000); // Wait for UI to update
 }
 
