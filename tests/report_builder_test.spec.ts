@@ -183,36 +183,49 @@ async function checkColumnNames(page: Page): Promise<void> {
 	expect(trimmedChecked).toEqual(trimmedHeaders);
 }
 
-async function toggleRandomCheckboxes(page: Page, count: number = 8): Promise<void> {
+async function getRandomCheckboxIndices(page: Page, count: number, checkedOnly: boolean = false): Promise<number[]> {
+	const listItems = await page.getByRole('listitem').all();
+	const validIndices: number[] = [];
+	
+	if (checkedOnly) {
+		// Find all checked items
+		for (let i = 0; i < listItems.length; i++) {
+			const checkbox = listItems[i].locator('.p-checkbox-checked, [aria-checked="true"]').first();
+			if (await checkbox.count() > 0) {
+				validIndices.push(i);
+			}
+		}
+	} else {
+		// Use all indices
+		validIndices.push(...Array.from({ length: listItems.length }, (_, i) => i));
+	}
+	
+	// Randomly select up to 'count' items
+	const randomIndices = new Set<number>();
+	while (randomIndices.size < Math.min(count, validIndices.length)) {
+		randomIndices.add(validIndices[Math.floor(Math.random() * validIndices.length)]);
+	}
+	
+	return Array.from(randomIndices);
+}
+
+async function toggleRandomCheckboxes(page: Page, count: number = 12, checkedOnly: boolean = false): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
-	await page.waitForTimeout(1000); // Wait for dropdown to open
+	await page.waitForTimeout(1000);
 	
 	const listItems = await page.getByRole('listitem').all();
-	const randomIndices = new Set<number>();
-	
-	while (randomIndices.size < Math.min(count, listItems.length)) {
-		randomIndices.add(Math.floor(Math.random() * listItems.length));
-	}
+	const randomIndices = await getRandomCheckboxIndices(page, count, checkedOnly);
 	
 	for (const index of randomIndices) {
-		// Try clicking the checkbox div or the list item itself
 		const listItem = listItems[index];
 		const checkbox = listItem.locator('.p-checkbox, .p-checkbox-box, input[type="checkbox"]').first();
-		
-		// Check if checkbox exists, otherwise click the list item
-		const checkboxCount = await checkbox.count();
-		if (checkboxCount > 0) {
-			await checkbox.click();
-		} else {
-			await listItem.click();
-		}
-		
-		console.log(`Toggled checkbox at index ${index}`);
-		await page.waitForTimeout(300); // Small delay between clicks
+		await (await checkbox.count() > 0 ? checkbox.click() : listItem.click());
+		console.log(`${checkedOnly ? 'Un' : ''}toggled checkbox at index ${index}`);
+		await page.waitForTimeout(300);
 	}
 	
-	await page.locator('p-multiselect').click(); // Close the dropdown
-	await page.waitForTimeout(1000); // Wait for UI to update
+	await page.locator('p-multiselect').click();
+	await page.waitForTimeout(1000);
 }
 
 test.describe('report builder suite', () => {
@@ -233,13 +246,17 @@ test.describe('report builder suite', () => {
 			
 			await checkColumnNames(salesReportPage);
 
-			await toggleRandomCheckboxes(salesReportPage, 8);
+			await toggleRandomCheckboxes(salesReportPage, 12);
 			
 			await checkColumnNames(salesReportPage);
+
+			await compareColumnsWithAPI(salesReportPage);
 			
 			await selectAllColumns(salesReportPage);
 			
-			await compareColumnsWithAPI(salesReportPage);
+			await checkColumnNames(salesReportPage);
+
+			
 
 		} catch (error) {
 			console.error('Error during test execution:', error);
