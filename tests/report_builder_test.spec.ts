@@ -1,10 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
+import { setPageSize, getTableRowCount, verifyPageSize } from '../helper/pagination';
 
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
+const PAGE_SIZE = 100;
 
 // I'm excluding these columns because I don't have an endpoint to get the labels from Customers, only orders.
 const EXCLUDED_COLUMNS = [
@@ -219,13 +221,57 @@ async function toggleRandomCheckboxes(page: Page, count: number = 12, checkedOnl
 	for (const index of randomIndices) {
 		const listItem = listItems[index];
 		const checkbox = listItem.locator('.p-checkbox, .p-checkbox-box, input[type="checkbox"]').first();
-		await (await checkbox.count() > 0 ? checkbox.click() : listItem.click());
+		await (await checkbox.count() > 0 ? checkbox.click({ timeout: TIMEOUT_NAVIGATION }) : listItem.click({ timeout: TIMEOUT_NAVIGATION }));
 		console.log(`${checkedOnly ? 'Un' : ''}toggled checkbox at index ${index}`);
-		await page.waitForTimeout(300);
+		await page.waitForTimeout(500);
 	}
 	
 	await page.locator('p-multiselect').click();
 	await page.waitForTimeout(1000);
+}
+
+async function testPaginationWithPageSize(page: Page, pageSize: number): Promise<void> {
+	await setPageSize(page, pageSize);
+	
+	const rowCount = await getTableRowCount(page);
+	console.log(`Pagination test - Page size: ${pageSize}, Actual rows: ${rowCount}`);
+	
+	expect(rowCount).toBe(pageSize);
+	console.log(`✓ Page size ${pageSize} verified with ${rowCount} table rows`);
+}
+
+// New helper: get 5 random order numbers from first cell (skip first row)
+// Modified to also include row index in the result
+async function getRandomOrderNumbers(page: Page, count: number = 5): Promise<{ index: number; orderNumber: string }[]> {
+	const rows = page.locator('table tbody tr');
+	await rows.first().waitFor({ state: 'visible', timeout: 5000 });
+
+	const total = await rows.count();
+	if (total <= 1) {
+		console.warn('No data rows available to sample.');
+		return [];
+	}
+
+	// Skip the first row
+	const selectable = Array.from({ length: total - 1 }, (_, i) => i + 1);
+	const toPick = Math.min(count, selectable.length);
+	const picked = new Set<number>();
+	while (picked.size < toPick) {
+		picked.add(selectable[Math.floor(Math.random() * selectable.length)]);
+	}
+
+	const selectedRows: { index: number; orderNumber: string }[] = [];
+	for (const idx of picked) {
+		const firstCell = rows.nth(idx).locator('td').first();
+		const orderNumber = (await firstCell.innerText()).trim();
+		selectedRows.push({ index: idx, orderNumber });
+	}
+
+	console.log(
+		`Random selections (${selectedRows.length}): ` +
+		selectedRows.map(r => `row ${r.index} -> ${r.orderNumber}`).join(', ')
+	);
+	return selectedRows;
 }
 
 test.describe('report builder suite', () => {
@@ -242,6 +288,17 @@ test.describe('report builder suite', () => {
 
 			const salesReportPage = await goToSalesReport(reportBuilderPage);
 
+			await testPaginationWithPageSize(salesReportPage, PAGE_SIZE);
+
+			// Get 5 random rows: index and first td (order number), skipping the first row
+			const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);
+
+			// Loop to process each selected row
+			for (const { index, orderNumber } of rowsWithOrders) {
+				// TODO: do something with each row and order number
+				console.log(`Processing row ${index} with order ${orderNumber}`);
+			}
+
 			await columnsSelectedCount(salesReportPage);
 			
 			await checkColumnNames(salesReportPage);
@@ -255,8 +312,6 @@ test.describe('report builder suite', () => {
 			await selectAllColumns(salesReportPage);
 			
 			await checkColumnNames(salesReportPage);
-
-			
 
 		} catch (error) {
 			console.error('Error during test execution:', error);
