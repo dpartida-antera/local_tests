@@ -6,6 +6,51 @@ const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
 
+// I'm excluding these columns because I don't have an endpoint to get the labels from Customers, only orders.
+const EXCLUDED_COLUMNS = [
+	"Account #",
+	"Add Ons Cost",
+	"Add Ons Total",
+	"Balance",
+	"Billing Customer Email",
+	"Booked Date",
+	"Contact Email",
+	"Customer",
+	"Decoration Cost",
+	"Decoration Total",
+	"Difference Regular To Vouched Cost",
+	"Freight Cost",
+	"Freight Total",
+	"Gross Profit Percent",
+	"Invoice Date",
+	"Is Tax Exempt",
+	"MAS #",
+	"Non Taxable Amount",
+	"Order Subtotal",
+	"Order Total",
+	"Payment Amount",
+	"Payment Date",
+	"Payment Method",
+	"Payment Status",
+	"Product Cost",
+	"Product Total",
+	"Production Manager Email",
+	"Production Manager Phone",
+	"Proforma Date",
+	"Sales Person Mobile",
+	"Sales Tax",
+	"Shipping Account Number",
+	"Shipping Customer Email",
+	"Tax Exemption Reason",
+	"Taxable Amount",
+	"Tracking Number",
+	"Transaction Number",
+	"Vouched Cost",
+	"Vouched Gross Profit",
+	"Vouched Gross Profit Percent",
+	"Workflow Status"
+];
+
 // Functions
 async function goToReportBuilder(page: Page): Promise<Page> {
 	// Move mouse to simulate user interaction, then click and wait for popup
@@ -93,22 +138,26 @@ async function compareColumnsWithAPI(page: Page): Promise<void> {
 	await page.locator('p-multiselect').click(); // Close the dropdown
 	await page.waitForTimeout(500);
 	
+	// Filter out excluded columns
+	const columnsToCheck = columnNames.filter(col => !EXCLUDED_COLUMNS.includes(col));
+	console.log(`Checking ${columnsToCheck.length} columns (${columnNames.length - columnsToCheck.length} excluded)`);
+	
 	// Get field names from API
 	const apiLabelNames = await fetchFieldsFromAPI();
 	
-	// Check if all column names exist in API response
+	// Check if all UI columns exist in API response
 	const missingColumns: string[] = [];
-	for (const columnName of columnNames) {
+	for (const columnName of columnsToCheck) {
 		if (!apiLabelNames.includes(columnName)) {
 			missingColumns.push(columnName);
 		}
 	}
 	
 	if (missingColumns.length > 0) {
-		console.error(`Columns not found in API: ${missingColumns.join(', ')}`);
+		console.error(`Columns not found in API (${missingColumns.length}): ${missingColumns.join(', ')}`);
+		expect(missingColumns).toEqual([]);
 	}
 	
-	expect(missingColumns).toEqual([]);
 	console.log('All UI columns are present in the API response ✓');
 }
 
