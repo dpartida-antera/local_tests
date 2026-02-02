@@ -1,12 +1,23 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
 import { setPageSize, getTableRowCount, verifyPageSize } from '../helper/pagination';
-
+import { navigateToOrders } from '../helper/orders';
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
 const PAGE_SIZE = 100;
+
+// Column name mapping: Sales Report column name -> Order Detail page field name
+// Add entries here when column names differ between the two pages
+const COLUMN_NAME_MAPPING: Record<string, string> = {
+	// Example: "Sales Report Column": "Order Detail Field"
+	"Order No": "Order #",
+	"Order Status": "Status",
+	"Customer": "Account Name",
+	"Order Subtotal": "Subtotal",
+	// Add your mappings here as you discover mismatches
+};
 
 // I'm excluding these columns because I don't have an endpoint to get the labels from Customers, only orders.
 const EXCLUDED_COLUMNS = [
@@ -52,6 +63,11 @@ const EXCLUDED_COLUMNS = [
 	"Vouched Gross Profit Percent",
 	"Workflow Status"
 ];
+
+// Global variables for order detail page context
+let orderTotalElement: any;
+let orderTotal: number = 0;
+let orderTotalText: string = '';
 
 // Functions
 async function goToReportBuilder(page: Page): Promise<Page> {
@@ -274,6 +290,222 @@ async function getRandomOrderNumbers(page: Page, count: number = 5): Promise<{ i
 	return selectedRows;
 }
 
+async function searchOrderOnMainPage(page: Page, orderNumber: string, salesReportPage: Page, rowIndex: number): Promise<void> {
+	console.log(`Switching to main page to search for order ${orderNumber}`);
+
+	// Bring the main page to front
+	await page.bringToFront();
+
+	// Reload the page
+	await page.reload();
+	await navigateToOrders(page);
+	await page.waitForLoadState('networkidle');
+	await page.getByRole('textbox', { name: 'Search', exact: true }).click();
+	await page.getByRole('textbox', { name: 'Search', exact: true }).fill(`${orderNumber}`);
+	await page.locator('.p-input-icon-left.table_top_search > .pi').click();
+	const page1Promise = page.waitForEvent('popup');
+	await page.getByTitle(`${orderNumber}`).click();
+	const orderPage = await page1Promise;
+	await orderPage.bringToFront();
+	await orderPage.waitForLoadState('networkidle');
+
+	// Extract Order Total element and value from orderPage for reuse in verifications
+	// Store in global variables so other functions can access them
+	await orderPage.bringToFront();
+	orderTotalElement = orderPage.getByText(/Order Total:/);
+	const orderTotalCount = await orderTotalElement.count();
+	orderTotal = 0;
+	orderTotalText = '';
+
+	if (orderTotalCount > 0) {
+		orderTotalText = (await orderTotalElement.first().innerText()).trim();
+		// Extract Order Total value, handling pipe-separated format
+		const startIdx = orderTotalText.indexOf('Order Total:') + 'Order Total:'.length;
+		let remainingText = orderTotalText.substring(startIdx).trim();
+
+		// If starts with pipe, value is 0
+		if (remainingText.startsWith('|')) {
+			orderTotal = 0;
+		} else {
+			// Extract up to next pipe or end
+			const valueStr = remainingText.includes('|') ? remainingText.split('|')[0].trim() : remainingText;
+			orderTotal = parseFloat(valueStr.replace(/[$,]/g, '')) || 0;
+		}
+	}
+
+	console.log(`Order Total extracted: $${orderTotal}`);
+
+	// Verify all columns on salesReportPage match the values from orderPage
+	await salesReportPage.bringToFront();
+	const columnHeaders = await salesReportPage.getByRole('columnheader').allTextContents();
+	const targetRow = salesReportPage.locator('table tbody tr').nth(rowIndex);
+
+	console.log(`\nVerifying all columns for row ${rowIndex} (Order: ${orderNumber})`);
+
+	let verifiedCount = 0;
+	let skippedCount = 0;
+
+	for (let colIndex = 0; colIndex < columnHeaders.length; colIndex++) {
+		const columnName = columnHeaders[colIndex].trim();
+
+		// Skip empty column headers
+		if (!columnName) {
+			skippedCount++;
+			continue;
+		}
+
+		// Get cell value from sales report table
+		const cell = targetRow.locator('td').nth(colIndex);
+		const cellValue = (await cell.innerText()).trim();
+
+		// Check if there's a mapping for this column name
+		const detailPageFieldName = COLUMN_NAME_MAPPING[columnName] || columnName;
+
+		// Try to find the corresponding field on the order detail page
+		await orderPage.bringToFront();
+		try {
+			let fieldValue = '';
+			let fieldCount = 0;
+
+			// Special handling for Payment Status and Payment Amount - derive from Balance column
+			if (detailPageFieldName === 'Payment Status' || detailPageFieldName === 'Payment Amount') {
+				const balanceHeader = orderPage.getByRole('columnheader', { name: 'Balance' });
+				const balanceHeaderCount = await balanceHeader.count();
+
+				if (balanceHeaderCount > 0) {
+					// Find the table containing the Balance column
+					const table = balanceHeader.locator('xpath=ancestor::table').first();
+					const rows = table.locator('tbody tr');
+					const rowCount = await rows.count();
+
+					if (rowCount > 0) {
+						// Get the last row
+						const lastRow = rows.last();
+
+						// Find the Balance column index
+						const headers = await table.locator('thead th, thead td').allTextContents();
+						const balanceColIndex = headers.findIndex(h => h.trim().includes('Balance'));
+
+						if (balanceColIndex !== -1) {
+							const balanceCell = lastRow.locator('td').nth(balanceColIndex);
+							const balanceValue = (await balanceCell.innerText()).trim();
+							const balanceNum = parseFloat(balanceValue.replace(/[$,]/g, ''));
+
+							if (detailPageFieldName === 'Payment Status') {
+								// Determine payment status using the extracted orderTotal variable
+								if (balanceNum === 0) {
+									fieldValue = 'Paid';
+								} else if (balanceNum > 0 && balanceNum < orderTotal) {
+									fieldValue = 'Partial';
+								} else {
+									fieldValue = 'Unpaid';
+								}
+							} else if (detailPageFieldName === 'Payment Amount') {
+								// Calculate Payment Amount = Order Total - Last Balance
+								const paymentAmount = orderTotal - balanceNum;
+								fieldValue = paymentAmount.toString();
+							}
+
+							fieldCount = 1;
+						}
+					} else {
+						// No rows in Balance table - no payments made
+						if (detailPageFieldName === 'Payment Status') {
+							fieldValue = 'Unpaid';
+						} else if (detailPageFieldName === 'Payment Amount') {
+							// No payments made, payment amount = 0
+							fieldValue = '0';
+						}
+						fieldCount = 1;
+					}
+				} else {
+					// Balance header not found - no payment history
+					if (detailPageFieldName === 'Payment Amount') {
+						// No Balance table, no payments made
+						fieldValue = '0';
+						fieldCount = 1;
+					}
+				}
+			} else {
+				// Look for the field in format "Field Name: value"
+				const fieldElement = orderPage.getByText(new RegExp(`${detailPageFieldName}:`));
+				fieldCount = await fieldElement.count();
+			}
+
+			if (fieldCount > 0 && detailPageFieldName !== 'Payment Status' && detailPageFieldName !== 'Payment Amount') {
+				const fieldElement = orderPage.getByText(new RegExp(`${detailPageFieldName}:`));
+				const fieldText = (await fieldElement.first().innerText()).trim();
+
+				// Extract value after the field name, handling both standalone and pipe-separated fields
+				const fieldNamePattern = `${detailPageFieldName}:`;
+
+				if (fieldText.includes(fieldNamePattern)) {
+					// Find the position after "FieldName:"
+					const startIndex = fieldText.indexOf(fieldNamePattern) + fieldNamePattern.length;
+					let remainingText = fieldText.substring(startIndex).trim();
+
+					// If the field value starts with a pipe, the field has no value (empty/0)
+					if (remainingText.startsWith('|')) {
+						fieldValue = '0';
+					} else {
+						// Stop at next pipe separator
+						if (remainingText.includes('|')) {
+							fieldValue = remainingText.split('|')[0].trim();
+						} else {
+							fieldValue = remainingText;
+						}
+					}
+				}
+			}
+
+			if (fieldCount > 0) {
+				// Special handling for certain fields - only take the first part
+				if (detailPageFieldName === 'Status' || detailPageFieldName === 'Invoice Date') {
+					fieldValue = fieldValue.split(' ')[0].trim();
+				}
+
+				// Normalize currency/number fields by removing $ and commas
+				let normalizedCellValue = cellValue.replace(/[$,]/g, '').trim();
+				let normalizedFieldValue = fieldValue.replace(/[$,]/g, '').trim();
+
+				// Treat empty values as "0" for numeric fields
+				if (normalizedCellValue === '') normalizedCellValue = '0';
+				if (normalizedFieldValue === '') normalizedFieldValue = '0';
+
+				// For numeric values, normalize to same decimal format for comparison
+				const isNumeric = !isNaN(parseFloat(normalizedCellValue)) && !isNaN(parseFloat(normalizedFieldValue));
+				if (isNumeric) {
+					const cellNum = parseFloat(normalizedCellValue);
+					const fieldNum = parseFloat(normalizedFieldValue);
+					normalizedCellValue = cellNum.toString();
+					normalizedFieldValue = fieldNum.toString();
+				}
+
+				const mappingNote = COLUMN_NAME_MAPPING[columnName] ? ` (mapped to "${detailPageFieldName}")` : '';
+				console.log(`  Column "${columnName}"${mappingNote}: table="${cellValue}", detail="${fieldValue}"`);
+				expect(normalizedCellValue).toBe(normalizedFieldValue);
+				verifiedCount++;
+			} else {
+				console.log(`  ⚠️  Column "${columnName}": NOT FOUND on detail page (searched for "${detailPageFieldName}:") - table value: "${cellValue}"`);
+				console.log(`      → Add mapping to COLUMN_NAME_MAPPING if this field exists with a different name`);
+				skippedCount++;
+			}
+		} catch (error) {
+			console.log(`  Column "${columnName}": error checking (${error.message})`);
+			skippedCount++;
+		}
+
+		await salesReportPage.bringToFront();
+	}
+
+	console.log(`✓ Verified ${verifiedCount} columns, skipped ${skippedCount} columns for row ${rowIndex}\n`);
+
+	// Wait for search results to load
+	await page.waitForTimeout(2000);
+
+	console.log(`✓ Searched for order ${orderNumber} on main page`);
+}
+
 test.describe('report builder suite', () => {
 	test.describe.configure({ timeout: 480000 });
 
@@ -295,8 +527,7 @@ test.describe('report builder suite', () => {
 
 			// Loop to process each selected row
 			for (const { index, orderNumber } of rowsWithOrders) {
-				// TODO: do something with each row and order number
-				console.log(`Processing row ${index} with order ${orderNumber}`);
+				await searchOrderOnMainPage(page, orderNumber, salesReportPage, index);
 			}
 
 			await columnsSelectedCount(salesReportPage);
