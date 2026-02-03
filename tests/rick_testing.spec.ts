@@ -76,41 +76,121 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
 		
   });
 
-test('CRITICAL: Autocomplete fields must use dropdown selection', async ({ page }) => {
-  test.setTimeout(480000);
+  test('CRITICAL: Autocomplete fields must use dropdown selection', async ({ page }) => {
+    test.setTimeout(480000);
+    
+    const salesRepInputempty = page
+      .locator('div')
+      .filter({ hasText: /^Sales Rep$/ })
+      .getByRole('searchbox');
 
-  // Make sure the form is rendered
-  await page.getByText('General Info', { exact: false }).waitFor({ state: 'visible', timeout: 15000 });
+    // Click y escribir algo parcial
+    await salesRepInputempty.click();
+    await salesRepInputempty.fill('diego');
 
-  // 1) Locate the SECOND visible text "Sales Rep"
-  const salesRepLabel = page.locator('text=Sales Rep').nth(2);
-  console.log('Sales Rep label count:', await page.locator('text=Sales Rep').count());
+    // Click fuera (cualquier zona neutra)
+    await page.locator('app-table div')
+      .filter({ hasText: 'Customer Sales Rep CSR' })
+      .nth(2)
+      .click();
 
-  // 2) Go up to the field container. You’ve been using ../..; keep that for now.
-  const salesRepContainer = salesRepLabel.locator('xpath=../..');
-  console.log('Sales Rep container bbox:', await salesRepContainer.boundingBox());
+    //  VALIDACIÓN: el campo debe quedar vacío
+    await expect(salesRepInputempty).toHaveValue('');
 
-  // 3) Click the container – this should focus the *real* input/combobox inside
-  await salesRepContainer.click();
-  await page.waitForTimeout(500);
+    const salesRepInput = page
+      .locator('div')
+      .filter({ hasText: /^Sales Rep$/ })
+      .getByRole('searchbox');
 
-  // 4) Type into the focused element using keyboard (don’t target the internal input)
-  await page.keyboard.type('diego', { delay: 50 });
+    // Click y escribir
+    await salesRepInput.click();
+    await salesRepInput.fill('dieg');
 
-  // 5) Wait for the autocomplete options and click one
-  const option = page
-    .locator('.p-autocomplete-items .p-autocomplete-item', { hasText: /diego/i })
-    .first();
+    // Esperar y seleccionar opción
+    await page.getByRole('option', { name: 'Diego Partida' }).click();
 
-  await option.waitFor({ state: 'visible', timeout: 5000 });
-  await option.click();
+    //  VALIDACIÓN: el input debe tener el valor correcto
+    await expect(salesRepInput).toHaveValue('Diego Partida');
+  });
 
-  // 6) Optional: assert that "diego" was selected.
-  // Easiest is to read back the visible text from the same container:
-  const containerText = await salesRepContainer.innerText();
-  console.log('Sales Rep container text after selection:', containerText);
-  expect(containerText.toLowerCase()).toContain('diego');
-});
+  test('CRITICAL: Parent Co. autocomplete field must use dropdown selection', async ({ page }) => {
+    test.setTimeout(480000);
+    
+    const parentCoInputEmpty = page
+      .locator('div')
+      .filter({ hasText: /^Parent Co\.$/ })
+      .getByRole('searchbox');
+
+    // Click y escribir algo parcial
+    await parentCoInputEmpty.click();
+    await parentCoInputEmpty.fill('diego');
+
+    // Click fuera (cualquier zona neutra)
+    await page.locator('app-table div')
+      .filter({ hasText: 'Customer Sales Rep CSR' })
+      .nth(2)
+      .click();
+
+    //  VALIDACIÓN: el campo debe quedar vacío
+    await expect(parentCoInputEmpty).toHaveValue('');
+
+    const parentCoInput = page
+      .locator('div')
+      .filter({ hasText: /^Parent Co\.$/ })
+      .getByRole('searchbox');
+
+    // Click y escribir
+    await parentCoInput.click();
+    await parentCoInput.fill('dieg');
+
+    // Esperar y seleccionar opción
+    await page.getByRole('option', { name: 'Diego Partida Customer' }).click();
+
+    //  VALIDACIÓN: el input debe tener el valor correcto
+    await expect(parentCoInput).toHaveValue('Diego Partida Customer');
+  });
+
+  // test('Notes field should contain expected text', async ({ page }) => {
+  //   test.setTimeout(480000);
+
+  //   // Wait for the form to be visible
+  //   await page.getByText('General Info', { exact: false }).waitFor({ state: 'visible', timeout: 15000 });
+
+  //   // Locate the Notes textarea by finding the Notes span/label and navigating to its textarea
+  //   const notesLabel = page.getByText('Notes', { exact: true }).first();
+  //   const notesField = notesLabel.locator('xpath=../..').locator('textarea');
+    
+  //   // Fill in the notes field with test text
+  //   await notesField.waitFor({ state: 'visible', timeout: 5000 });
+  //   await notesField.fill('test');
+    
+  //   // Assert that the notes field contains the expected text
+  //   await expect(notesField).toHaveValue('test');
+  // });
+
+  test('CRITICAL: Notes field must respect 500 char limit (QuickBooks Sync)', async ({ page }) => {
+    test.setTimeout(480000);
+
+    // Wait for the form to be visible
+    await page.getByText('General Info', { exact: false }).waitFor({ state: 'visible', timeout: 15000 });
+
+    // Locate the Notes textarea
+    const notesLabel = page.getByText('Notes', { exact: true }).first();
+    const notesField = notesLabel.locator('xpath=../..').locator('textarea');
+    
+    // Fill with 501 characters (exceeds limit)
+    await notesField.waitFor({ state: 'visible', timeout: 5000 });
+    const longText = 'A'.repeat(501);
+    await notesField.fill(longText);
+    
+    // Try to save
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.waitForTimeout(2000);
+
+    // Assert that an error message is displayed
+    // Note: Update the selector and text based on actual error implementation
+    await expect(page.locator('.error-message, .p-toast-message, [role="alert"]').first()).toBeVisible({ timeout: 5000 });
+  });
 
 
   // test('CRITICAL: General Notes field must respect 500 char limit (QuickBooks Sync)', async ({ page }) => {

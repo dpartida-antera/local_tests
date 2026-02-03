@@ -7,7 +7,7 @@ const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
 const TIMEOUT_FILTER = 5000;
 const PAGE_SIZE = 100;
-
+// very important check worfkow status. check this ticket: https://app.intercom.com/a/inbox/atglaaf2/inbox/admin/9006494/conversation/215472928323436?view=List
 // Column name mapping: Sales Report column name -> Order Detail page field name
 // Add entries here when column names differ between the two pages
 const COLUMN_NAME_MAPPING: Record<string, string> = {
@@ -71,17 +71,26 @@ let orderTotalText: string = '';
 
 // Functions
 async function goToReportBuilder(page: Page): Promise<Page> {
-	// Move mouse to simulate user interaction, then click and wait for popup
-	await page.mouse.move(100, 100);
-	const reportBuilderElement = page.getByText('bar_chartReports Builder');
+	for (let attempt = 1; attempt <= 3; attempt++) {
+		try {
+			await page.mouse.move(100, 100);
+			const reportBuilderElement = page.getByText('bar_chartReports Builder');
+			await reportBuilderElement.waitFor({ state: 'visible', timeout: TIMEOUT_NAVIGATION });
 
-	const [page2] = await Promise.all([
-		page.waitForEvent('popup'),
-		reportBuilderElement.click(),
-	]);
+			const [page2] = await Promise.all([
+				page.waitForEvent('popup'),
+				reportBuilderElement.click(),
+			]);
 
-	await page2.waitForLoadState();
-	return page2;
+			await page2.waitForLoadState();
+			return page2;
+		} catch (error) {
+			console.warn(`goToReportBuilder attempt ${attempt} failed: ${error}`);
+			if (attempt === 3) throw error;
+			await page.waitForTimeout(500);
+		}
+	}
+	throw new Error('goToReportBuilder exhausted retries'); // safety
 }
 
 async function openMenu(page: Page): Promise<void> {
@@ -116,7 +125,7 @@ async function selectAllColumns(page: Page): Promise<void> {
 
 }
 
-async function fetchFieldsFromAPI(): Promise<string[]> {
+async function fetchFieldsFromAPI(): Promise<{ labelNames: string[], fieldMap: Map<string, string> }> {
 	// Postman puts ODI2YjBkZTBkYjE2 as username, then encodes "username:" for Basic Auth
 	const username = 'ODI2YjBkZTBkYjE2';
 	const auth = Buffer.from(`${username}:`).toString('base64');
@@ -139,8 +148,13 @@ async function fetchFieldsFromAPI(): Promise<string[]> {
 	
 	const data = await response.json();
 	const labelNames = data.map((field: any) => field.labelName);
-	console.log(`API returned ${labelNames.length} field labels`);
-	return labelNames;
+	const fieldMap = new Map<string, string>();
+	data.forEach((field: any) => {
+		fieldMap.set(field.labelName, field.fieldName);
+	});
+	
+	console.log(`API returned ${labelNames.length} field labels and ${fieldMap.size} field mappings`);
+	return { labelNames, fieldMap };
 }
 
 async function compareColumnsWithAPI(page: Page): Promise<void> {
@@ -161,7 +175,7 @@ async function compareColumnsWithAPI(page: Page): Promise<void> {
 	console.log(`Checking ${columnsToCheck.length} columns (${columnNames.length - columnsToCheck.length} excluded)`);
 	
 	// Get field names from API
-	const apiLabelNames = await fetchFieldsFromAPI();
+	const { labelNames: apiLabelNames } = await fetchFieldsFromAPI();
 	
 	// Check if all UI columns exist in API response
 	const missingColumns: string[] = [];
