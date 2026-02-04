@@ -174,6 +174,10 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     // Wait for the form to be visible
     await page.getByText('General Info', { exact: false }).waitFor({ state: 'visible', timeout: 15000 });
 
+    // Fill customer name with random string
+    const randomName = generateRandomString(10);
+    await page.getByRole('textbox', { name: 'Enter a name...' }).fill(await randomName);
+
     // Locate the Notes textarea
     const notesLabel = page.getByText('Notes', { exact: true }).first();
     const notesField = notesLabel.locator('xpath=../..').locator('textarea');
@@ -183,6 +187,7 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     const longText = 'A'.repeat(501);
     await notesField.fill(longText);
     
+
     // Try to save
     await page.getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
