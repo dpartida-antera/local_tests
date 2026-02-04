@@ -197,6 +197,8 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     await expect(page.locator('.error-message, .p-toast-message, [role="alert"]').first()).toBeVisible({ timeout: 5000 });
   });
 
+    test('Completing an activity from Dashboard removes it from list)', async ({ page }) => {
+    test.setTimeout(480000);
 
   // test('CRITICAL: General Notes field must respect 500 char limit (QuickBooks Sync)', async ({ page }) => {
   //   // Source [3, 7]: "If you type more than 500 characters... QuickBooks will refuse the order."
