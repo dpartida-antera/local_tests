@@ -197,9 +197,6 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     await expect(page.locator('.error-message, .p-toast-message, [role="alert"]').first()).toBeVisible({ timeout: 5000 });
   });
 
-    test('Completing an activity from Dashboard removes it from list)', async ({ page }) => {
-    test.setTimeout(480000);
-
   // test('CRITICAL: General Notes field must respect 500 char limit (QuickBooks Sync)', async ({ page }) => {
   //   // Source [3, 7]: "If you type more than 500 characters... QuickBooks will refuse the order."
     
@@ -225,6 +222,65 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
   //   await expect(page.getByLabel('Parent Account')).toBeEmpty();
   // });
 });
+
+// Group 3: Activities Dashboard Workflow
+test.describe('Activities module', () => {
+
+  test.beforeEach(async ({ page }) => {
+		test.setTimeout(480000);
+
+		await login(page);
+		await page.goto(`${config.baseUrl}/activities/v1`);
+    await page.waitForTimeout(2000);
+  });
+
+  test('Completing an activity from Dashboard removes it from list)', async ({ page }) => {
+    test.setTimeout(480000);
+    const firstRow = page.locator('tbody tr').first();
+
+    // 3. Extract all column values from this row to uniquely identify it
+    const columnCount = await firstRow.locator('td').count();
+    const columnValues: string[] = [];
+    for (let i = 0; i < columnCount; i++) {
+      const cellText = await firstRow.locator('td').nth(i).innerText();
+      columnValues.push(cellText);
+    }
+    console.log(`Testing with row values: ${columnValues.join(' | ')}`);
+
+    // 4. Identify the "Pending" button within this specific row
+    const pendingButton = firstRow.getByText('Pending');
+
+    // 5. Click the button
+    await pendingButton.click();
+
+    // 6. Wait for the UI to update and check if the first row has different values
+    // If the first row still has the same values, the row was not removed as expected
+    await page.waitForTimeout(1000);
+    
+    const newFirstRow = page.locator('tbody tr').first();
+    const newColumnCount = await newFirstRow.locator('td').count();
+    
+    let rowValuesMatch = true;
+    if (newColumnCount === columnCount) {
+      for (let i = 0; i < columnCount; i++) {
+        const newCellText = await newFirstRow.locator('td').nth(i).innerText();
+        if (newCellText !== columnValues[i]) {
+          rowValuesMatch = false;
+          break;
+        }
+      }
+    } else {
+      rowValuesMatch = false;
+    }
+    
+    // Assert that the first row has changed (old row was removed)
+    expect(rowValuesMatch).toBe(false);
+    
+  });
+
+});
+
+
 
 
 // test('orders_quantity_test', async ({ page }: { page: Page }) => {
