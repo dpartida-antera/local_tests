@@ -9,57 +9,46 @@ const TIMEOUT_FILTER = 5000;
 test.describe('Global Navigation & Search Rules', () => {
 
   test('Global Search should find PO/Order numbers but FAIL on Address', async ({ page }) => {
-    test.setTimeout(480000);
-    try{
-			await login(page);
-    	// 1. Positive Test: Search by Order Number (Valid)
-			await page.getByPlaceholder('Global Search').fill('53614'); // Example from transcript [5]
-			await page.keyboard.press('Enter');
-			// await expect(page.getByText('Order #53614')).toBeVisible();
-			await page.getByRole('button', { name: 'Orders' }).click();
-			await expect(page.locator('mat-list-item')).toContainText('53614');
+    test.setTimeout(120000);
+    await login(page);
+    // 1. Positive Test: Search by Order Number (Valid)
+    await page.getByPlaceholder('Global Search').fill('53614'); // Example from transcript [5]
+    await page.keyboard.press('Enter');
+    // await expect(page.getByText('Order #53614')).toBeVisible();
+    await page.getByRole('button', { name: 'Orders' }).click();
+    await expect(page.locator('mat-list-item')).toContainText('53614');
 
-			// 2. Negative Test: Search by Address (Invalid)
-			// Rick explicitly states: "If you type 2121 Main Street... it won't find it" [1]
-			await page.getByPlaceholder('Global Search').fill('2121 Main Street');
-			await page.keyboard.press('Enter');
-			await expect(page.getByText('No results found')).toBeVisible();
+    // 2. Negative Test: Search by Address (Invalid)
+    // Rick explicitly states: "If you type 2121 Main Street... it won't find it" [1]
+    await page.getByPlaceholder('Global Search').fill('2121 Main Street');
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('No results found')).toBeVisible();
 
-		} catch (error) {
-				console.error('Test failed with error:', error);
-				throw error; // Rethrow to ensure the test is marked as failed
-		}
-		// Source [1]: Global search finds Name, Email, Order#, PO# but NOT Address.
-    
+    // Source [1]: Global search finds Name, Email, Order#, PO# but NOT Address.
   });
 		
   test('Module Level Search should find Address', async ({ page }) => {
-		test.setTimeout(480000);
-    try{
-			// Source [6]: Column specific search finds fields global search misses.
-			// await page.goto('/crm/customers');
-			await login(page);
-			await page.goto(`${config.baseUrl}/accounts/v1`);
+    test.setTimeout(480000);
+    // Source [6]: Column specific search finds fields global search misses.
+    // await page.goto('/crm/customers');
+    await login(page);
+    await page.goto(`${config.baseUrl}/accounts/v1`);
 
-			const filterIcon = page.locator('i').nth(5);
-			await filterIcon.click({ timeout: TIMEOUT_FILTER });
-			await page.waitForTimeout(1000);
-			
-			// Select filter option
-			await page.getByRole('textbox', { name: 'Search by Bill Address1' }).click();
-			await page.getByRole('textbox', { name: 'Search by Bill Address1' }).fill('144 Brays Chapel Rd');
-			
-			// Wait for the table to update with filtered results
-			await page.waitForTimeout(2000); // Additional wait for results to populate
-			await page.getByText('Search', { exact: true }).click();
+    const filterIcon = page.locator('i').nth(5);
+    await filterIcon.click({ timeout: TIMEOUT_FILTER });
+    await page.waitForTimeout(1000);
+    
+    // Select filter option
+    await page.getByRole('textbox', { name: 'Search by Bill Address1' }).click();
+    await page.getByRole('textbox', { name: 'Search by Bill Address1' }).fill('144 Brays Chapel Rd');
+    
+    // Wait for the table to update with filtered results
+    await page.waitForTimeout(2000); // Additional wait for results to populate
+    await page.getByText('Search', { exact: true }).click();
 
-			
-			// Should find the record now
-			await expect(page.locator('table tbody tr')).toHaveCount(1);		
-		} catch (error) {
-			console.error('Test failed with error:', error);
-			throw error; // Rethrow to ensure the test is marked as failed
-		}
+    
+    // Should find the record now
+    await expect(page.locator('table tbody tr')).toHaveCount(1);
   });
 });
 
