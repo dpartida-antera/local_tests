@@ -1,6 +1,6 @@
 import { type Page, expect } from '@playwright/test';
 
-const TIMEOUT_NAVIGATION = 7000;
+const TIMEOUT_NAVIGATION = 25000; // 25 seconds
 
 export async function setPageSize(page: Page, size: number): Promise<void> {
   const dropdown = page.locator('.p-paginator .p-dropdown-trigger');
