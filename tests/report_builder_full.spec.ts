@@ -17,55 +17,38 @@ import {
 const PAGE_SIZE = 100;
 const TEST_DELAY_MS = 10000;
 
-async function openSalesReport(page: Page): Promise<Page> {
-	await login(page);
-	await openMenu(page);
-	const reportBuilderPage = await goToReportBuilder(page);
-	return goToSalesReport(reportBuilderPage);
-}
-
 test.describe('report builder suite', () => {
-	test.describe.configure({ timeout: 480000, retries: 1 });
+	test.describe.configure({ timeout: 480000 });
 
 	test.beforeAll(async ({}, testInfo) => {
-		testInfo.setTimeout(120000);
+		testInfo.setTimeout(240000); //
 		const delay = testInfo.workerIndex * TEST_DELAY_MS;
 		if (delay > 0) {
 			await new Promise(resolve => setTimeout(resolve, delay));
 		}
 	});
 
-	test('report_builder_pagination_page_size', async ({ page }: { page: Page }) => {
-		const salesReportPage = await openSalesReport(page);
+	test('report_builder_full', async ({ page }: { page: Page }) => {
+		await login(page);
+		await openMenu(page);
+
+		const reportBuilderPage = await goToReportBuilder(page);
+		const salesReportPage = await goToSalesReport(reportBuilderPage);
 
 		await testPaginationWithPageSize(salesReportPage, PAGE_SIZE);
-	});
-
-	test('report_builder_order_details_match', async ({ page }: { page: Page }) => {
-		const salesReportPage = await openSalesReport(page);
 
 		const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);
 		for (const { index, orderNumber } of rowsWithOrders) {
 			await searchOrderOnMainPage(page, orderNumber, salesReportPage, index);
 		}
-	});
 
-	test('report_builder_columns_toggle', async ({ page }: { page: Page }) => {
-		const salesReportPage = await openSalesReport(page);
-
+		await columnsSelectedCount(salesReportPage);
 		await checkColumnNames(salesReportPage);
+
 		await toggleRandomCheckboxes(salesReportPage, 12);
 		await checkColumnNames(salesReportPage);
-	});
-
-	test('report_builder_columns_api_coverage', async ({ page }: { page: Page }) => {
-		const salesReportPage = await openSalesReport(page);
 
 		await compareColumnsWithAPI(salesReportPage);
-	});
-
-	test('report_builder_select_all_columns', async ({ page }: { page: Page }) => {
-		const salesReportPage = await openSalesReport(page);
 
 		await selectAllColumns(salesReportPage);
 		await checkColumnNames(salesReportPage);
