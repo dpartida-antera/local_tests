@@ -6,6 +6,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+docs/Diego/*
 
 # Config files with sensitive data
 test-config.json

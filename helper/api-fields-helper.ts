@@ -1,4 +1,6 @@
 // API Field Types
+type BooleanString = "0" | "1";
+
 export interface APIField {
 	id: string;
 	fieldName: string;
@@ -6,14 +8,14 @@ export interface APIField {
 	labelName: string;
 	fieldType: string;
 	optionName: string | null;
-	isEditable: string;
-	autoUpdate: string;
-	isVisible: string;
+	isEditable: BooleanString;
+	autoUpdate: BooleanString;
+	isVisible: BooleanString;
 	module: string | null;
 	moduleSection: string;
-	strictlyRequired: string;
-	required: string;
-	allowImport: string;
+	strictlyRequired: BooleanString;
+	required: BooleanString;
+	allowImport: BooleanString;
 	dateCreated: string | null;
 	dateModified: string | null;
 	createdByName: string | null;
@@ -32,13 +34,10 @@ export interface APIField {
  * @returns Filtered array of fields matching the module
  */
 export function filterFieldsByModule(fields: APIField[], moduleName: string): APIField[] {
-	return fields.filter(field => {
-		// Handle null module or case-insensitive comparison
-		if (!field.module) return false;
-		// Trim whitespace and newlines, then compare case-insensitively
-		const normalizedModule = field.module.trim().toLowerCase();
-		return normalizedModule === moduleName.toLowerCase();
-	});
+	const normalizedModuleName = moduleName.toLowerCase();
+	return fields.filter(field => 
+		field.module?.trim().toLowerCase() === normalizedModuleName
+	);
 }
 
 /**
@@ -52,80 +51,81 @@ export function normalizeLabelName(labelName: string | null | undefined): string
 	return labelName.replace(/[\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function addNormalizedLabel(target: Set<string>, label: string | null | undefined): void {
-	if (!label) return;
-	const normalized = normalizeLabelName(label);
-	if (normalized) target.add(normalized);
-}
-
 /**
- * Extract label names from a list of fields
+ * Get unique normalized label names for a specific module
+ * Optimized single-pass implementation
  * @param fields - Array of API fields
- * @returns Array of normalized label names
+ * @param moduleName - Module name to filter by
+ * @param debug - Optional flag to enable debug logging
+ * @returns Array of unique normalized label names
  */
-export function extractLabelNames(fields: APIField[]): string[] {
+export function getModuleLabelNames(
+	fields: APIField[], 
+	moduleName: string,
+	debug = false
+): string[] {
 	const labels = new Set<string>();
-	fields.forEach(field => {
-		addNormalizedLabel(labels, field.labelName);
-	});
+	const normalizedModuleName = moduleName.toLowerCase();
+	let fieldCount = 0;
+	
+	for (const field of fields) {
+		// Filter by module inline
+		if (field.module?.trim().toLowerCase() === normalizedModuleName) {
+			fieldCount++;
+			const normalized = normalizeLabelName(field.labelName);
+			if (normalized) {
+				labels.add(normalized);
+			}
+		}
+	}
+	
+	if (debug) {
+		console.log(`Module '${moduleName}': ${fieldCount} fields, ${labels.size} unique labels`);
+	}
+	
 	return Array.from(labels);
 }
 
 /**
- * Create a map of label names to field names
+ * Get all unique label names from API fields regardless of module
  * @param fields - Array of API fields
+ * @returns Set of all unique label names
+ */
+export function getAllLabelNames(fields: APIField[]): Set<string> {
+	const labels = new Set<string>();
+	
+	for (const field of fields) {
+		const normalized = normalizeLabelName(field.labelName);
+		if (normalized) {
+			labels.add(normalized);
+		}
+	}
+	
+	return labels;
+}
+
+/**
+ * Create a map of label names to field names for a specific module
+ * @param fields - Array of API fields
+ * @param moduleName - Module name to filter by
  * @returns Map with normalized labelName as key and fieldName as value
  */
-export function createFieldMap(fields: APIField[]): Map<string, string> {
-	const fieldMap = new Map<string, string>();
-	fields.forEach(field => {
-		const normalizedLabel = normalizeLabelName(field.labelName);
-		fieldMap.set(normalizedLabel, field.fieldName);
-	});
-	return fieldMap;
-}
-
-/**
- * Get fields for a specific module and return label names and field map
- * @param fields - Array of all API fields
- * @param moduleName - Module name to filter by
- * @returns Object containing labelNames array and fieldMap
- */
-export function getModuleFieldData(
+export function getModuleFieldMap(
 	fields: APIField[], 
 	moduleName: string
-): { labelNames: string[], fieldMap: Map<string, string> } {
-	const filteredFields = filterFieldsByModule(fields, moduleName);
-	const labelNames = extractLabelNames(filteredFields);
-	const fieldMap = createFieldMap(filteredFields);
+): Map<string, string> {
+	const fieldMap = new Map<string, string>();
+	const normalizedModuleName = moduleName.toLowerCase();
 	
-	console.log(`Module '${moduleName}': ${filteredFields.length} fields, ${labelNames.length} labels, ${fieldMap.size} mappings`);
-	
-	return { labelNames, fieldMap };
-}
-
-/**
- * Get all unique module names from fields
- * @param fields - Array of API fields
- * @returns Array of unique module names
- */
-export function getUniqueModules(fields: APIField[]): string[] {
-	const modules = new Set<string>();
-	fields.forEach(field => {
-		if (field.module) {
-			modules.add(field.module);
+	for (const field of fields) {
+		// Filter by module inline
+		if (field.module?.trim().toLowerCase() === normalizedModuleName) {
+			const normalizedLabel = normalizeLabelName(field.labelName);
+			if (normalizedLabel) {
+				fieldMap.set(normalizedLabel, field.fieldName);
+			}
 		}
-	});
-	return Array.from(modules).sort();
-}
-
-/**
- * Filter fields by visibility
- * @param fields - Array of API fields
- * @param visible - Whether to get visible fields (default: true)
- * @returns Filtered array of fields
- */
-export function filterFieldsByVisibility(fields: APIField[], visible: boolean = true): APIField[] {
-	const visibilityValue = visible ? '1' : '0';
-	return fields.filter(field => field.isVisible === visibilityValue);
+	}
+	
+	return fieldMap;
 }

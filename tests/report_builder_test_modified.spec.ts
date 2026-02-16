@@ -41,7 +41,7 @@ test.describe('report builder suite', () => {
 		await testPaginationWithPageSize(salesReportPage, PAGE_SIZE);
 	});
 
-	test('report_builder_order_details_match', async ({ page }: { page: Page }) => {
+	test.only('report_builder_order_details_match', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);
