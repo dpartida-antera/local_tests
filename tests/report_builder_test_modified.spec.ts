@@ -35,13 +35,15 @@ test.describe('report builder suite', () => {
 		}
 	});
 
+	// Verifies report pagination behavior when page size is set to 100 rows.
 	test('report_builder_pagination_page_size', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		await testPaginationWithPageSize(salesReportPage, PAGE_SIZE);
 	});
 
-	test.only('report_builder_order_details_match', async ({ page }: { page: Page }) => {
+	// Validates that random order numbers in the report match details on the main page.
+	test('report_builder_order_details_match', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);
@@ -50,6 +52,7 @@ test.describe('report builder suite', () => {
 		}
 	});
 
+	// Checks that toggling random column checkboxes updates visible column headers correctly.
 	test('report_builder_columns_toggle', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
@@ -58,12 +61,14 @@ test.describe('report builder suite', () => {
 		await checkColumnNames(salesReportPage);
 	});
 
+	// Compares report builder columns against API-provided fields for coverage consistency.
 	test('report_builder_columns_api_coverage', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		await compareColumnsWithAPI(salesReportPage);
 	});
 
+	// Ensures selecting all columns shows the full expected set of column names.
 	test('report_builder_select_all_columns', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 

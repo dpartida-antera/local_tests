@@ -505,7 +505,12 @@ async function searchOrderOnMainPage(page: Page, orderNumber: string, salesRepor
 				skippedCount++;
 			}
 		} catch (error) {
-			console.log(`  Column "${columnName}": error checking (${error.message})`);
+			// If it's an assertion error, re-throw it to fail the test
+			if ((error as Error).message.includes('expect(')) {
+				throw error;
+			}
+			// Otherwise, log and skip (for other errors like element not found)
+			console.log(`  Column "${columnName}": error checking (${(error as Error).message})`);
 			skippedCount++;
 		}
 
