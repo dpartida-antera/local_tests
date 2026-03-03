@@ -1,8 +1,8 @@
 import { test, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
+import { openMenu } from '../helper/ui-helpers';
 import {
 	goToReportBuilder,
-	openMenu,
 	goToSalesReport,
 	columnsSelectedCount,
 	checkColumnNames,
@@ -27,7 +27,7 @@ async function openSalesReport(page: Page): Promise<Page> {
 test.describe('report builder suite', () => {
 	test.describe.configure({ timeout: 480000, retries: 1 });
 
-	test.beforeAll(async ({}, testInfo) => {
+	test.beforeAll(async ({ }, testInfo) => {
 		testInfo.setTimeout(120000);
 		const delay = testInfo.workerIndex * TEST_DELAY_MS;
 		if (delay > 0) {
@@ -43,7 +43,7 @@ test.describe('report builder suite', () => {
 	});
 
 	// Validates that random order numbers in the report match details on the main page.
-	test('report_builder_order_details_match', async ({ page }: { page: Page }) => {
+	test.only('report_builder_order_details_match', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);
