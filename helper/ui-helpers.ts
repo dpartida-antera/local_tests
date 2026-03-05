@@ -178,7 +178,7 @@ export async function getColumnIndex(page: Page, columnName: string, timeout: nu
  * @param columnName - The exact header text of the column to pick the value from (e.g. 'Order #')
  * @param specificSearchTerm - Optional value to search for instead of grabbing the first row's value
  */
-export async function searchByFirstColumnValue(page: Page, columnName: string, specificSearchTerm?: string): Promise<void> {
+export async function searchByFirstColumnValue(page: Page, columnName: string, specificSearchTerm?: string): Promise<string> {
   // Resolve column index dynamically
   const colIndex = await getColumnIndex(page, columnName);
 
@@ -212,5 +212,36 @@ export async function searchByFirstColumnValue(page: Page, columnName: string, s
   const resultTexts = await resultCells.allTextContents();
   const hasExactMatch = resultTexts.some(t => t.trim() === searchTerm);
   expect(hasExactMatch, `Could not find exact match for "${searchTerm}" in column "${columnName}"`).toBe(true);
+
+  return searchTerm;
 }
 
+/**
+ * Clicks on an order row and verifies the Receiving PO dialog is visible
+ * @param page - The Playwright page
+ * @param orderNum - The order number or text to identify the row
+ */
+export async function openReceivingDialogByOrderNumber(page: Page, orderNum: string): Promise<void> {
+  const orderRow = page.locator('tr').filter({ hasText: orderNum });
+  await orderRow.first().click();
+  await expect(page.getByRole('dialog').locator('div').filter({ hasText: 'Receiving PO' }).first()).toBeVisible();
+}
+
+/**
+ * Selects the first checkbox in the grid and clicks 'Receive All'
+ * @param page - The Playwright page
+ */
+export async function selectFirstCheckboxAndReceive(page: Page): Promise<void> {
+  await page.getByRole('gridcell').first().click();
+  await page.getByRole('button', { name: 'Receive All' }).click();
+}
+
+/**
+ * Performs a search and verifies that no records are found in the table
+ * @param page - The Playwright page
+ * @param searchTerm - The term to search for
+ */
+export async function searchAndExpectNoRecords(page: Page, searchTerm: string): Promise<void> {
+  await performSearchInModule(page, searchTerm);
+  await expect(page.locator('tbody')).toContainText('No records found');
+}
