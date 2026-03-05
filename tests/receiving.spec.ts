@@ -115,7 +115,7 @@ test.describe('receiving suite', () => {
   });
 
 
-  test.only('should receive by selecting all checkbox', async ({ page }: { page: Page }) => {
+  test('should receive by selecting all checkbox', async ({ page }: { page: Page }) => {
     //order test
     const randomNameOr = generateRandomString(10);
     const OrderNameF = 'Firstname' + randomNameOr;
@@ -152,5 +152,57 @@ test.describe('receiving suite', () => {
     await searchAndExpectNoRecords(page, orderNumber);
 
   });
+  test.only('PartialReceiving', async ({ page }: { page: Page }) => {
+    //order test
+    const randomNameOr = generateRandomString(10);
+    const OrderNameF = 'Firstname' + randomNameOr;
+    const OrderNameL = 'Lastname' + randomNameOr;
+    const emailLeadO = randomNameOr + '@anterasoftware.com';
+    const testOrderO = 'test order' + randomNameOr;
 
+    // 1. Login with specific user
+    await login(page);
+
+    // 2. Order Creation
+    await navigateToOrders(page);
+    await clickAddOrder(page);
+    await createNewCustomer(page, OrderNameF);
+    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
+    await fillOrderDates(page, '22-09-2030', '28');
+    await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
+    await updateOrderShippingBilling(page);
+    await bookOrder(page);
+    const orderNumber = await getOrderNumberFromScreen(page);
+    await page.waitForTimeout(2000);
+    await toggleSourceOn(page);
+    await resourcingFromStockToDropship(page, 'first');
+    await navigateToModule(page, 'receiving');
+    await waitForLoader(page);
+    await searchByFirstColumnValue(page, 'Order #', orderNumber);
+    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await page.getByRole('gridcell', { name: 'Receiving' }).click();
+    await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill('1');
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'More' }).click();
+    await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
+    await navigateToModule(page, 'receiving');
+    await waitForLoader(page);
+    await searchByFirstColumnValue(page, 'Order #', orderNumber);
+    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await expect(page.locator('mat-row')).toContainText('Balance 9');
+    await page.getByRole('gridcell', { name: 'Receiving' }).click();
+    await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill('4');
+    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: 'More' }).click();
+    await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
+    await navigateToModule(page, 'receiving');
+    await waitForLoader(page);
+    await searchByFirstColumnValue(page, 'Order #', orderNumber);
+    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await expect(page.locator('mat-row')).toContainText('Balance 5');
+    // await waitForLoader(page);
+    //search for the order and expecting to not find it
+
+  });
 });
