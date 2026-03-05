@@ -168,28 +168,36 @@ export async function getColumnIndex(page: Page, columnName: string, timeout: nu
 }
 
 /**
- * Searches the table using the first value found in a named column,
+ * Searches the table using the provided value or the first value found in a named column,
  * then asserts the search returns at least one row with an exact match.
  *
+ * If no search term is provided, it extracts it from the first row.
  * The column cell is expected to contain an <a> link whose text is the search term.
  *
  * @param page       - The Playwright page
  * @param columnName - The exact header text of the column to pick the value from (e.g. 'Order #')
+ * @param specificSearchTerm - Optional value to search for instead of grabbing the first row's value
  */
-export async function searchByFirstColumnValue(page: Page, columnName: string): Promise<void> {
+export async function searchByFirstColumnValue(page: Page, columnName: string, specificSearchTerm?: string): Promise<void> {
   // Resolve column index dynamically
   const colIndex = await getColumnIndex(page, columnName);
 
-  // Grab the first row's value for that column
-  const firstRow = page.locator('tbody tr').first();
-  await firstRow.waitFor({ state: 'visible' });
-  const cellText = await firstRow.locator('td').nth(colIndex).locator('a').textContent();
+  let searchTerm = specificSearchTerm;
 
-  if (!cellText) {
-    throw new Error(`No text found in the first row of column "${columnName}"`);
+  if (!searchTerm) {
+    // Grab the first row's value for that column
+    const firstRow = page.locator('tbody tr').first();
+    await firstRow.waitFor({ state: 'visible' });
+    const cellText = await firstRow.locator('td').nth(colIndex).locator('a').textContent();
+
+    if (!cellText) {
+      throw new Error(`No text found in the first row of column "${columnName}"`);
+    }
+
+    searchTerm = cellText.trim();
+  } else {
+    searchTerm = searchTerm.trim();
   }
-
-  const searchTerm = cellText.trim();
 
   // Perform the search
   await performSearchInModule(page, searchTerm);
