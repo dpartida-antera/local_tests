@@ -250,3 +250,30 @@ export async function searchAndExpectNoRecords(page: Page, searchTerm: string): 
   await performSearchInModule(page, searchTerm);
   await expect(page.locator('tbody')).toContainText('No records found');
 }
+
+/**
+ * Navigates to the receiving module, searches for an order, and opens its receiving dialog
+ * @param page - The Playwright page
+ * @param orderNum - Optional order number to search for. If omitted, uses the first order.
+ * @returns The order number that was searched and opened
+ */
+export async function navigateToReceivingAndOpenOrder(page: Page, orderNum?: string): Promise<string> {
+  await navigateToModule(page, 'receiving');
+  await waitForLoader(page);
+  const foundOrderNum = await searchByFirstColumnValue(page, 'Order #', orderNum);
+  await openReceivingDialogByOrderNumber(page, foundOrderNum);
+  return foundOrderNum;
+}
+
+/**
+ * Receives a partial quantity by clicking the Receiving cell, filling a quantity, and clicking 'More'
+ * @param page - The Playwright page
+ * @param quantity - The quantity to receive
+ */
+export async function receivePartialQuantity(page: Page, quantity: string): Promise<void> {
+  await page.getByRole('gridcell', { name: 'Receiving' }).click();
+  await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill(quantity);
+  await page.waitForTimeout(2000);
+  await page.getByRole('button', { name: 'More' }).click();
+  await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
+}

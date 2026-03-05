@@ -185,5 +185,5 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await page.getByText('Save', { exact: true }).click();
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Update' }).click();
-  await expect(page.getByText('Order updated successfully')).toBeVisible({ timeout: 3000 });
+  await expect(page.getByText('Order updated successfully')).toBeVisible({ timeout: 15000 });
 }

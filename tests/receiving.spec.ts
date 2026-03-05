@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
-import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive } from '../helper/ui-helpers';
+import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
 import { generateRandomString, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship } from '../helper/orders';
 
@@ -23,12 +23,7 @@ test.describe('receiving suite', () => {
       await login(page);
 
       // 2. Receiving & Row Selection
-      await navigateToModule(page, 'receiving');
-      await waitForLoader(page);
-      const orderNum = await searchByFirstColumnValue(page, 'Order #');
-      sharedOrderNum = orderNum;
-      // await waitForLoader(page);
-      await openReceivingDialogByOrderNumber(page, orderNum);
+      sharedOrderNum = await navigateToReceivingAndOpenOrder(page);
 
       // 3. Open Activities Sidebar
       await openActivitiesSidebar(page);
@@ -49,18 +44,12 @@ test.describe('receiving suite', () => {
       await login(page);
 
       // 2. Receiving & Row Selection
-      await navigateToModule(page, 'receiving');
-      await waitForLoader(page);
-
       // Ensure we have a shared order number from the first test
       if (!sharedOrderNum) {
         throw new Error('sharedOrderNum is not set. The create test must run and succeed first.');
       }
 
-      // Pass the saved order number as the specificSearchTerm
-      const orderNum = await searchByFirstColumnValue(page, 'Order #', sharedOrderNum);
-      // await waitForLoader(page);
-      await openReceivingDialogByOrderNumber(page, orderNum);
+      await navigateToReceivingAndOpenOrder(page, sharedOrderNum);
 
       // 3. Open Activities Sidebar
       await openActivitiesSidebar(page);
@@ -103,10 +92,7 @@ test.describe('receiving suite', () => {
     await page.waitForTimeout(2000);
     await toggleSourceOn(page);
     await resourcingFromStockToDropship(page, 'first');
-    await navigateToModule(page, 'receiving');
-    await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', orderNumber);
-    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectFirstCheckboxAndReceive(page);
     await waitForLoader(page);
     //search for the order and expecting to not find it
@@ -142,17 +128,14 @@ test.describe('receiving suite', () => {
     await toggleSourceOn(page);
     await resourcingFromStockToDropship(page, 'first');
     await resourcingFromStockToDropship(page, 1);
-    await navigateToModule(page, 'receiving');
-    await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', orderNumber);
-    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectAllCheckboxAndReceive(page);
     await waitForLoader(page);
     //search for the order and expecting to not find it
     await searchAndExpectNoRecords(page, orderNumber);
 
   });
-  test.only('PartialReceiving', async ({ page }: { page: Page }) => {
+  test('PartialReceiving', async ({ page }: { page: Page }) => {
     //order test
     const randomNameOr = generateRandomString(10);
     const OrderNameF = 'Firstname' + randomNameOr;
@@ -177,29 +160,12 @@ test.describe('receiving suite', () => {
     await page.waitForTimeout(2000);
     await toggleSourceOn(page);
     await resourcingFromStockToDropship(page, 'first');
-    await navigateToModule(page, 'receiving');
-    await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', orderNumber);
-    await openReceivingDialogByOrderNumber(page, orderNumber);
-    await page.getByRole('gridcell', { name: 'Receiving' }).click();
-    await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill('1');
-    await page.waitForTimeout(2000);
-    await page.getByRole('button', { name: 'More' }).click();
-    await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
-    await navigateToModule(page, 'receiving');
-    await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', orderNumber);
-    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await navigateToReceivingAndOpenOrder(page, orderNumber);
+    await receivePartialQuantity(page, '1');
+    await navigateToReceivingAndOpenOrder(page, orderNumber);
     await expect(page.locator('mat-row')).toContainText('Balance 9');
-    await page.getByRole('gridcell', { name: 'Receiving' }).click();
-    await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill('4');
-    await page.waitForTimeout(2000);
-    await page.getByRole('button', { name: 'More' }).click();
-    await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
-    await navigateToModule(page, 'receiving');
-    await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', orderNumber);
-    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await receivePartialQuantity(page, '4');
+    await navigateToReceivingAndOpenOrder(page, orderNumber);
     await expect(page.locator('mat-row')).toContainText('Balance 5');
     // await waitForLoader(page);
     //search for the order and expecting to not find it
