@@ -77,7 +77,7 @@ export async function fillOrderDates(page: Page, shipDate: string, dueDay: strin
   await page.getByRole('button', { name: 'Create' }).click();
 }
 
-export async function addProductToOrder(page: Page, productInHouseNumber: string, quantity: string): Promise<void> {
+export async function addStockProductToOrder(page: Page, productInHouseNumber: string, quantity: string, color: string, testIdQuantityLocation: string): Promise<void> {
   await page.getByRole('tab', { name: 'Products' }).locator('div').click();
   await page.getByPlaceholder('Add A New Product').click();
   await page.getByPlaceholder('Add A New Product').fill(productInHouseNumber);
@@ -85,11 +85,15 @@ export async function addProductToOrder(page: Page, productInHouseNumber: string
   await page.getByRole('button', { name: 'Add to Order' }).click();
   await page.waitForTimeout(5000);
   await page.locator('div').filter({ hasText: /^Color$/ }).first().click();
-  await page.getByRole('option', { name: 'Black' }).click();
-  await page.getByTestId('quantity-input-0-0').fill(quantity);
-  await page.waitForTimeout(5000);
+  await page.getByRole('option', { name: color }).click();
+  await page.waitForTimeout(2000);
+  await page.getByTestId(testIdQuantityLocation).fill(quantity);
+  await page.waitForTimeout(4000);
   await page.getByRole('button', { name: 'Update' }).click();
+  // await page.getByRole('button', { name: 'Yes' }).click();
   await page.waitForTimeout(7000);
+  // await expect(page.locator('div').filter({ hasText: /^Price Break Confirmation$/ })).toBeVisible();
+  // await page.getByRole('button', { name: 'No' }).click();
 }
 
 export async function updateOrderShippingBilling(page: Page): Promise<void> {
@@ -133,4 +137,53 @@ export async function bookOrder(page: Page): Promise<void> {
   await page.waitForTimeout(6000);
   await page.getByText('Booked', { exact: true }).click();
   await page.waitForTimeout(5000);
+}
+
+/**
+ * Extracts the dynamically generated Order # text from the screen and parses it into a string
+ * @param page The Playwright Page object
+ * @returns The parsed order number
+ */
+export async function getOrderNumberFromScreen(page: Page): Promise<string> {
+  // Finds the text like "Order #xxxx for Firstnamexx" and extracts the number
+  const orderTitleElement = page.getByText(/Order #\d+ for/);
+  await orderTitleElement.waitFor({ state: 'visible' });
+  const orderText = await orderTitleElement.textContent();
+
+  // orderText should look like "Order #55833 for..."
+  // Match "Order #<number>" and extract the <number> group
+  const match = orderText?.match(/Order #(\d+)/);
+
+  if (!match || !match[1]) {
+    throw new Error(`Could not parse order number from text: ${orderText}`);
+  }
+
+  return match[1];
+}
+
+export async function toggleSourceOn(page: Page): Promise<void> {
+  await page.getByRole('tab', { name: 'Products' }).click();
+  await page.locator('label').filter({ hasText: 'Source' }).click();
+}
+
+export async function resourcingFromStockToDropship(page: Page, sourceLocation: string | number): Promise<void> {
+
+  if (sourceLocation === 'first') {
+    await page.getByText('expand_more Source').first().click();
+  } else {
+    const index = typeof sourceLocation === 'number' ? sourceLocation : parseInt(sourceLocation, 10);
+    await page.getByText('expand_more Source').nth(index).click();
+  }
+
+  await page.waitForTimeout(3000);
+  await expect(page.getByText('Auto Assign').nth(2)).toBeVisible();
+  await page.getByRole('button', { name: 'DropShip' }).click();
+  await page.waitForTimeout(3000);
+  await page.getByText('Auto Assign').nth(2).click();
+  await page.waitForTimeout(3000);
+  await expect(page.getByText('Save', { exact: true })).toBeVisible();
+  await page.getByText('Save', { exact: true }).click();
+  await page.waitForTimeout(2000);
+  await page.getByRole('button', { name: 'Update' }).click();
+  await expect(page.getByText('Order updated successfully')).toBeVisible({ timeout: 3000 });
 }

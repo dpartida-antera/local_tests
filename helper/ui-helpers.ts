@@ -236,6 +236,11 @@ export async function selectFirstCheckboxAndReceive(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Receive All' }).click();
 }
 
+export async function selectAllCheckboxAndReceive(page: Page): Promise<void> {
+  await page.locator('.mat-checkbox-inner-container').first().click();
+  await page.getByRole('button', { name: 'Receive All' }).click();
+}
+
 /**
  * Performs a search and verifies that no records are found in the table
  * @param page - The Playwright page

@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
-import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords } from '../helper/ui-helpers';
+import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
-import { generateRandomString, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addProductToOrder, updateOrderShippingBilling, bookOrder } from '../helper/orders';
+import { generateRandomString, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship } from '../helper/orders';
 
 test.describe('receiving suite', () => {
   test.describe.configure({ timeout: 480000, retries: 1 });
@@ -78,9 +78,9 @@ test.describe('receiving suite', () => {
     });
   });
 
-  test.only('should receive by selecting individual checkbox', async ({ page }: { page: Page }) => {
+  test('should receive by selecting individual checkbox', async ({ page }: { page: Page }) => {
     //order test
-    const randomNameOr = generateRandomString(6);
+    const randomNameOr = generateRandomString(10);
     const OrderNameF = 'Firstname' + randomNameOr;
     const OrderNameL = 'Lastname' + randomNameOr;
     const emailLeadO = randomNameOr + '@anterasoftware.com';
@@ -96,19 +96,61 @@ test.describe('receiving suite', () => {
     await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     await fillOrderDates(page, '22-09-2030', '28');
-    await addProductToOrder(page, '50639720', '10');
+    await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     await updateOrderShippingBilling(page);
     await bookOrder(page);
+    const orderNumber = await getOrderNumberFromScreen(page);
+    await page.waitForTimeout(2000);
+    await toggleSourceOn(page);
+    await resourcingFromStockToDropship(page, 'first');
     await navigateToModule(page, 'receiving');
     await waitForLoader(page);
-    await searchByFirstColumnValue(page, 'Order #', testOrderO);
-    await openReceivingDialogByOrderNumber(page, testOrderO);
+    await searchByFirstColumnValue(page, 'Order #', orderNumber);
+    await openReceivingDialogByOrderNumber(page, orderNumber);
     await selectFirstCheckboxAndReceive(page);
+    await waitForLoader(page);
     //search for the order and expecting to not find it
-    await searchAndExpectNoRecords(page, testOrderO);
+    await searchAndExpectNoRecords(page, orderNumber);
 
   });
 
 
+  test.only('should receive by selecting all checkbox', async ({ page }: { page: Page }) => {
+    //order test
+    const randomNameOr = generateRandomString(10);
+    const OrderNameF = 'Firstname' + randomNameOr;
+    const OrderNameL = 'Lastname' + randomNameOr;
+    const emailLeadO = randomNameOr + '@anterasoftware.com';
+    const testOrderO = 'test order' + randomNameOr;
+
+    // 1. Login with specific user
+    await login(page);
+
+    // 2. Order Creation
+    await navigateToOrders(page);
+    await clickAddOrder(page);
+    await createNewCustomer(page, OrderNameF);
+    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
+    await fillOrderDates(page, '22-09-2030', '28');
+    await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
+    await addStockProductToOrder(page, '50639720', '10', 'Green', 'quantity-input-1-0');
+    await updateOrderShippingBilling(page);
+    await bookOrder(page);
+    const orderNumber = await getOrderNumberFromScreen(page);
+    await page.waitForTimeout(2000);
+    await toggleSourceOn(page);
+    await resourcingFromStockToDropship(page, 'first');
+    await resourcingFromStockToDropship(page, 1);
+    await navigateToModule(page, 'receiving');
+    await waitForLoader(page);
+    await searchByFirstColumnValue(page, 'Order #', orderNumber);
+    await openReceivingDialogByOrderNumber(page, orderNumber);
+    await selectAllCheckboxAndReceive(page);
+    await waitForLoader(page);
+    //search for the order and expecting to not find it
+    await searchAndExpectNoRecords(page, orderNumber);
+
+  });
 
 });
