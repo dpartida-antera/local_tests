@@ -1,4 +1,4 @@
-import { expect, type Page, type Locator } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 
 /**
  * Opens the main navigation menu by clicking the menu button
@@ -276,4 +276,29 @@ export async function receivePartialQuantity(page: Page, quantity: string): Prom
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'More' }).click();
   await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
+}
+
+export async function navigateToAdminConfig(page: Page): Promise<void> {
+  await page.goto("https://dev.anterasaas.com/admin/config")
+  await waitForLoader(page);
+}
+
+export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page: Page): Promise<void> {
+  const isVisible = await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)', { exact: true }).isVisible({ timeout: 5000 });
+
+  if (!isVisible) {
+    await page.getByText('Work Order Configure work').locator('.mat-form-field-infix').click();
+    await page.waitForTimeout(2000);
+    await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)').click();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Order Settings updated')).toBeVisible();
+  }
+}
+
+export async function verifyFirstWorkOrderIsCorrect(page: Page): Promise<void> {
+  await expect(page.getByText('Work Order (1 of 2)')).toBeVisible();
+  await expect(page.getByText('Left Arm').first()).toBeVisible();
+  await expect(page.getByText('Long buttoned shirt DiegoP Stock Item #: S658 In house ID: 50639720 SPC/ASI:').first()).toBeVisible();
+  await expect(page.getByText('Color: Black').first()).toBeVisible();
+
 }

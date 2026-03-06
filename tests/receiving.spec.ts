@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
-import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder } from '../helper/ui-helpers';
+import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyFirstWorkOrderIsCorrect } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
-import { generateRandomString, generateOrderTestData, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship } from '../helper/orders';
+import { generateRandomString, generateOrderTestData, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder } from '../helper/orders';
 
 test.describe('receiving suite', () => {
   test.describe.configure({ timeout: 480000, retries: 1 });
@@ -159,7 +159,27 @@ test.describe('receiving suite', () => {
     //search for the order and expecting to not find it
 
   });
-  test('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
+  test.only('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
+    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
+
+    await login(page);
+    // await navigateToAdminConfig(page);
+    // await makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page);
+    // await clickAddOrder(page);
+    // await createNewCustomer(page, OrderNameF);
+    // await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    // await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
+    // await fillOrderDates(page, '22-09-2030', '28');
+    // await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
+    // await addArtworkToFirstLineItem(page);
+    // await duplicateFirstLineItem(page);
+    // await changeArtworkLocation(page, 2, 'Apron Bottom Right');
+    await page.goto('https://dev.anterasaas.com/e-commerce/orders/e4e97a63-1969-11f1-be08-02aa6a9eb851');
+    await expect(page.getByText('Basic Order Info Edit Order')).toBeVisible({ timeout: 20000 });
+    await navigateToDocumentsInOrder(page);
+    await expectTwoWorkOrdersToBeCreated(page);
+    await openNthWorkOrder(page, 1);
+    await verifyFirstWorkOrderIsCorrect(page);
 
   })
 });

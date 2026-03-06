@@ -108,9 +108,8 @@ export async function addStockProductToOrder(page: Page, productInHouseNumber: s
   await page.waitForTimeout(2000);
   await page.getByTestId(testIdQuantityLocation).fill(quantity);
   await page.waitForTimeout(4000);
-  await page.getByRole('button', { name: 'Update' }).click();
+  await clickUpdateButton(page);
   // await page.getByRole('button', { name: 'Yes' }).click();
-  await page.waitForTimeout(7000);
   // await expect(page.locator('div').filter({ hasText: /^Price Break Confirmation$/ })).toBeVisible();
   // await page.getByRole('button', { name: 'No' }).click();
 }
@@ -205,4 +204,64 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByText('Order updated successfully')).toBeVisible({ timeout: 15000 });
+}
+
+export async function selectFirstLineItem(page: Page): Promise<void> {
+  await page.locator('.mat-grid-tile-content span.mat-checkbox-inner-container').click();
+  await page.waitForTimeout(4000);
+
+}
+
+export async function selectArtworkIcon(page: Page): Promise<void> {
+  await page.locator('#action-artwork').getByText('palette').click();
+  await page.waitForTimeout(3000);
+}
+
+export async function addArtworkToFirstLineItem(page: Page, artworkNumber: string = 'D007833'): Promise<void> {
+  await selectFirstLineItem(page);
+  await selectArtworkIcon(page);
+  await page.getByText('photoSelect Existing').click();
+  await page.locator('#mat-slide-toggle-6 div').nth(2).click();
+  await page.getByText('list', { exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search' }).fill(artworkNumber);
+  await page.locator('#antera-order-form-details-sidenav').getByText('search').click();
+  await page.locator('.preview-card-checkbox span.mat-checkbox-inner-container').first().click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByText('Add To Selected Only add this').click();
+  await page.waitForTimeout(3000);
+}
+
+export async function duplicateFirstLineItem(page: Page): Promise<void> {
+  await page.getByText('more_vert').first().click();
+  await page.getByRole('menuitem', { name: 'Duplicate Line' }).click();
+  await page.waitForTimeout(4000);
+}
+
+export async function clickUpdateButton(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Update' }).click();
+  await page.waitForTimeout(7000);
+}
+
+export async function changeArtworkLocation(page: Page, nthArtwork: number = 1, location: string = 'Apron Bottom Right'): Promise<void> {
+  await page.getByText('palette').nth(nthArtwork).click();
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByText(/Location:.*.{2}/).click();
+  await page.getByText(location).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await clickUpdateButton(page);
+}
+
+export async function expectTwoWorkOrdersToBeCreated(page: Page): Promise<void> {
+  await expect(page.getByText('Work Order 002')).toBeVisible();
+}
+
+export async function navigateToDocumentsInOrder(page: Page): Promise<void> {
+  await page.getByRole('tab', { name: 'Documents' }).click();
+  await expect(page.getByText('Quote', { exact: true })).toBeVisible();
+}
+
+export async function openNthWorkOrder(page: Page, nthWorkOrder: number = 2): Promise<void> {
+  await page.locator(`div:nth-child(2) > .documentTypeSidebar_documents_pdf > div:nth-child(${nthWorkOrder})`).click();
+  await expect(page.getByText(`Work Order (${nthWorkOrder} of 2)`)).toBeVisible();
 }
