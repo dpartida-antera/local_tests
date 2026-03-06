@@ -29,6 +29,25 @@ export function generateRandomString(length: number): string {
   return randomString;
 }
 
+export interface OrderTestData {
+  randomNameOr: string;
+  OrderNameF: string;
+  OrderNameL: string;
+  emailLeadO: string;
+  testOrderO: string;
+}
+
+export function generateOrderTestData(): OrderTestData {
+  const randomNameOr = generateRandomString(10);
+  return {
+    randomNameOr,
+    OrderNameF: 'Firstname' + randomNameOr,
+    OrderNameL: 'Lastname' + randomNameOr,
+    emailLeadO: randomNameOr + '@anterasoftware.com',
+    testOrderO: 'test order' + randomNameOr,
+  };
+}
+
 export async function clickAddOrder(page: Page): Promise<void> {
   await page.locator('p-speeddial').getByRole('button').click();
   await page.getByRole('menuitem', { name: '' }).click();

@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
 import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
-import { generateRandomString, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship } from '../helper/orders';
+import { generateRandomString, generateOrderTestData, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship } from '../helper/orders';
 
 test.describe('receiving suite', () => {
   test.describe.configure({ timeout: 480000, retries: 1 });
@@ -69,11 +69,7 @@ test.describe('receiving suite', () => {
 
   test('should receive by selecting individual checkbox', async ({ page }: { page: Page }) => {
     //order test
-    const randomNameOr = generateRandomString(10);
-    const OrderNameF = 'Firstname' + randomNameOr;
-    const OrderNameL = 'Lastname' + randomNameOr;
-    const emailLeadO = randomNameOr + '@anterasoftware.com';
-    const testOrderO = 'test order' + randomNameOr;
+    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -103,11 +99,7 @@ test.describe('receiving suite', () => {
 
   test('should receive by selecting all checkbox', async ({ page }: { page: Page }) => {
     //order test
-    const randomNameOr = generateRandomString(10);
-    const OrderNameF = 'Firstname' + randomNameOr;
-    const OrderNameL = 'Lastname' + randomNameOr;
-    const emailLeadO = randomNameOr + '@anterasoftware.com';
-    const testOrderO = 'test order' + randomNameOr;
+    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -137,11 +129,7 @@ test.describe('receiving suite', () => {
   });
   test('PartialReceiving', async ({ page }: { page: Page }) => {
     //order test
-    const randomNameOr = generateRandomString(10);
-    const OrderNameF = 'Firstname' + randomNameOr;
-    const OrderNameL = 'Lastname' + randomNameOr;
-    const emailLeadO = randomNameOr + '@anterasoftware.com';
-    const testOrderO = 'test order' + randomNameOr;
+    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -171,4 +159,7 @@ test.describe('receiving suite', () => {
     //search for the order and expecting to not find it
 
   });
+  test('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
+
+  })
 });
