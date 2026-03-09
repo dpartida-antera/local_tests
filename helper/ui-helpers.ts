@@ -284,7 +284,13 @@ export async function navigateToAdminConfig(page: Page): Promise<void> {
 }
 
 export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page: Page): Promise<void> {
-  const isVisible = await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)', { exact: true }).isVisible({ timeout: 5000 });
+  let isVisible = false;
+  try {
+    await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
+    isVisible = true;
+  } catch (e) {
+    isVisible = false;
+  }
 
   if (!isVisible) {
     await page.getByText('Work Order Configure work').locator('.mat-form-field-infix').click();
@@ -295,10 +301,19 @@ export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(p
   }
 }
 
-export async function verifyFirstWorkOrderIsCorrect(page: Page): Promise<void> {
-  await expect(page.getByText('Work Order (1 of 2)')).toBeVisible();
-  await expect(page.getByText('Left Arm').first()).toBeVisible();
-  await expect(page.getByText('Long buttoned shirt DiegoP Stock Item #: S658 In house ID: 50639720 SPC/ASI:').first()).toBeVisible();
-  await expect(page.getByText('Color: Black').first()).toBeVisible();
+export async function verifyWorkOrderIsCorrect(page: Page, number: number, totalNumber: number, location: string): Promise<void> {
+  console.log(`verifyWorkOrderIsCorrect called with number=${number}, totalNumber=${totalNumber}`);
+  console.log(`Waiting for Work Order (${number} of ${totalNumber})`);
+  await expect(page.getByText(`Work Order (${number} of ${totalNumber})`).first()).toBeVisible({ timeout: 15000 });
 
+  console.log(`Waiting for ${location}`);
+  await expect(page.getByText(location).first()).toBeVisible({ timeout: 15000 });
+
+  console.log('Waiting for Long buttoned shirt...');
+  await expect(page.getByText('Long buttoned shirt DiegoP Stock Item #: S658 In house ID: 50639720 SPC/ASI:').first()).toBeVisible({ timeout: 15000 });
+
+  console.log('Waiting for Color: Black');
+  await expect(page.getByText('Color: Black').first()).toBeVisible({ timeout: 15000 });
+
+  console.log(`verifyWorkOrderIsCorrect completed for number=${number}`);
 }

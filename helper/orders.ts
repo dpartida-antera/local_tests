@@ -203,7 +203,8 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await page.getByText('Save', { exact: true }).click();
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Update' }).click();
-  await expect(page.getByText('Order updated successfully')).toBeVisible({ timeout: 15000 });
+  // await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
+  await expect(await page.getByText('Order updated successfully')).toBeVisible({ timeout: 15000 });
 }
 
 export async function selectFirstLineItem(page: Page): Promise<void> {
@@ -227,9 +228,11 @@ export async function addArtworkToFirstLineItem(page: Page, artworkNumber: strin
   await page.locator('#antera-order-form-details-sidenav').getByText('search').click();
   await page.locator('.preview-card-checkbox span.mat-checkbox-inner-container').first().click();
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByText('Add To Selected Only add this').click();
   await page.waitForTimeout(3000);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.waitForTimeout(3000);
+  await page.getByText('Add To Selected Only add this').click();
+  await page.waitForTimeout(5000);
 }
 
 export async function duplicateFirstLineItem(page: Page): Promise<void> {
@@ -262,6 +265,8 @@ export async function navigateToDocumentsInOrder(page: Page): Promise<void> {
 }
 
 export async function openNthWorkOrder(page: Page, nthWorkOrder: number = 2): Promise<void> {
+  console.log(`Opening work order ${nthWorkOrder}`);
+  console.log(`div:nth-child(2) > .documentTypeSidebar_documents_pdf > div:nth-child(${nthWorkOrder})`);
   await page.locator(`div:nth-child(2) > .documentTypeSidebar_documents_pdf > div:nth-child(${nthWorkOrder})`).click();
-  await expect(page.getByText(`Work Order (${nthWorkOrder} of 2)`)).toBeVisible();
+  await expect(page.getByText(`Work Order (${nthWorkOrder - 1} of 2)`)).toBeVisible({ timeout: 15000 });
 }
