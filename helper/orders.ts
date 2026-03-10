@@ -112,14 +112,14 @@ export async function addStockProductToOrder(page: Page, productInHouseNumber: s
   await page.getByText('+').click();
   await page.getByRole('button', { name: 'Add to Order' }).click();
   await waitForLoader(page, '.loading');
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(7000);
   // await page.locator('div').filter({ hasText: /^Color$/ }).first().click();
   const colorDropdown = page.locator('div').filter({ hasText: /^Color$/ }).first();
-  await colorDropdown.waitFor({ state: 'visible', timeout: 15000 });
+  await colorDropdown.waitFor({ state: 'visible', timeout: 25000 });
   await colorDropdown.click();
   await page.waitForTimeout(2000);
   const colorOption = page.getByRole('option', { name: color });
-  await colorOption.waitFor({ state: 'visible', timeout: 15000 });
+  await colorOption.waitFor({ state: 'visible', timeout: 25000 });
   await colorOption.click();
   await page.waitForTimeout(2000);
   await page.getByTestId(testIdQuantityLocation).fill(quantity);

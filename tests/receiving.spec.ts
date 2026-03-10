@@ -4,7 +4,7 @@ import { navigateToModule, waitForLoader, searchByFirstColumnValue, selectFirstC
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
 import { generateOrderTestData, navigateToOrdersDirectly, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder } from '../helper/orders';
 import { openOrderDetailPageViaMenu, searchAndOpenOrder } from '../helper/order-helpers';
-import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder } from '../helper/production-helpers';
+import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../helper/production-helpers';
 
 test.describe('receiving suite', () => {
   test.describe.configure({ timeout: 480000, retries: 0 });
@@ -263,27 +263,35 @@ test.describe('receiving suite', () => {
       await expect(page.locator('tbody')).not.toContainText(orderNumber);
     });
 
-    test('should add tags to production in Machine View', async ({ page }: { page: Page }) => {
+    const setupProductionTagsTest = async (page: Page) => {
       await login(page);
       console.log('login done');
       await navigateToModule(page, 'productions');
       await performSearchInModule(page, orderNumber);
       await page.waitForTimeout(6000);
-      await modifyModuleTagsMachineView(page, 'Add Module Tags', 'Fast Production', 'Add');
-      console.log('performSearchInModule done');
-      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
-      await expect(page.getByText('Order#').nth(1)).toBeVisible();
-    });
-    test('should remove tags to production in Machine View', async ({ page }: { page: Page }) => {
-      await login(page);
-      console.log('login done');
-      await navigateToModule(page, 'productions');
-      await performSearchInModule(page, orderNumber);
-      await page.waitForTimeout(6000);
-      await modifyModuleTagsMachineView(page, 'Remove Module Tags', 'Fast Production', 'Save');
-      console.log('performSearchInModule done');
-      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
-      await expect(page.getByText('Pending (8h) 0 Jobs 0 Pieces')).toBeVisible();
-    });
+    };
+
+    const views = [
+      { name: 'Machine View', modifyFunc: modifyModuleTagsMachineView, expectedRemoveText: 'Pending (8h) 0 Jobs 0 Pieces' },
+      { name: 'Status View', modifyFunc: modifyModuleTagsStatusView, expectedRemoveText: 'Pending 0 Jobs 0 Pieces' }
+    ];
+
+    for (const { name, modifyFunc, expectedRemoveText } of views) {
+      test(`should add tags to production in ${name}`, async ({ page }: { page: Page }) => {
+        await setupProductionTagsTest(page);
+        await modifyFunc(page, 'Add Module Tags', 'Fast Production', 'Add');
+        console.log('performSearchInModule done');
+        await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+        await expect(page.getByText('Order#').nth(1)).toBeVisible();
+      });
+
+      test(`should remove tags to production in ${name}`, async ({ page }: { page: Page }) => {
+        await setupProductionTagsTest(page);
+        await modifyFunc(page, 'Remove Module Tags', 'Fast Production', 'Save');
+        console.log('performSearchInModule done');
+        await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+        await expect(page.getByText(expectedRemoveText)).toBeVisible({ timeout: 25000 });
+      });
+    }
   });
 });

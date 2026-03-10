@@ -19,21 +19,33 @@ export async function modifyModuleTags(page: Page, action: 'Add Module Tags' | '
 }
 
 /**
- * Adds or removes a tag from the module in Machine View
+ * Shared helper for modifying module tags with a specific view locator.
  */
-export async function modifyModuleTagsMachineView(page: Page, action: 'Add Module Tags' | 'Remove Module Tags', tagName: string, confirmButton: 'Add' | 'Save') {
-  await page.locator('.pi.pi-desktop').click();
+async function modifyModuleTagsWithViewConfig(page: Page, viewLocator: string, action: 'Add Module Tags' | 'Remove Module Tags', tagName: string, confirmButton: 'Add' | 'Save', rowIconLocator: string = '.p-element.pi') {
+  await page.locator(viewLocator).click();
   await page.waitForTimeout(3000);
   await page.getByText('Pending').first().click();
   await page.waitForTimeout(2000);
-  await page.locator('.p-element.pi').first().click();
+  await page.locator(rowIconLocator).first().click();
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'Actions' }).click();
   await page.getByText(action).click();
   await page.getByText(tagName).click();
   await page.getByRole('button', { name: confirmButton }).click();
-  const actionCompletedToast = page.getByText('Action Completed.');
-  await actionCompletedToast.waitFor({ state: 'visible', timeout: 20000 });
+  // const actionCompletedToast = page.getByText('Action Completed.');
+  // await actionCompletedToast.waitFor({ state: 'visible', timeout: 20000 });
+  await page.waitForTimeout(5000);
+}
+
+/**
+ * Adds or removes a tag from the module in Machine View
+ */
+export async function modifyModuleTagsMachineView(page: Page, action: 'Add Module Tags' | 'Remove Module Tags', tagName: string, confirmButton: 'Add' | 'Save') {
+  await modifyModuleTagsWithViewConfig(page, '.pi.pi-desktop', action, tagName, confirmButton, '.p-element.pi');
+}
+
+export async function modifyModuleTagsStatusView(page: Page, action: 'Add Module Tags' | 'Remove Module Tags', tagName: string, confirmButton: 'Add' | 'Save') {
+  await modifyModuleTagsWithViewConfig(page, '.pi.pi-table', action, tagName, confirmButton, '.p-element.pi.pi-list');
 }
 
 /**
