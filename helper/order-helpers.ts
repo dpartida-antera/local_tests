@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { navigateToOrders } from './orders';
+import { navigateToOrders, navigateToOrdersDirectly } from './orders';
 import { waitForLoader } from './ui-helpers';
 
 // Timeout for navigation
@@ -296,7 +296,7 @@ export async function openOrderDetailPageViaMenu(
 ): Promise<Page> {
   await page.bringToFront();
   await page.reload();
-  await navigateToOrders(page);
+  await navigateToOrdersDirectly(page);
   await page.waitForLoadState('networkidle');
 
   const searchBox = page.getByRole('textbox', { name: 'Search', exact: true });

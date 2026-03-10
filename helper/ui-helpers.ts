@@ -157,7 +157,7 @@ export async function performSearchInModule(page: Page, searchTerm: string): Pro
  * @returns The 0-based column index
  * @throws Error if the column header is not found
  */
-export async function getColumnIndex(page: Page, columnName: string, timeout: number = 50000): Promise<number> {
+export async function getColumnIndex(page: Page, columnName: string, timeout: number = 30000): Promise<number> {
   await page.locator('table thead th, table thead td').first().waitFor({ state: 'visible', timeout });
   const headers = await page.locator('table thead th, table thead td').allTextContents();
   const index = headers.findIndex(h => h.trim() === columnName);
@@ -165,6 +165,40 @@ export async function getColumnIndex(page: Page, columnName: string, timeout: nu
     throw new Error(`Column "${columnName}" not found in table headers: [${headers.map(h => h.trim()).join(', ')}]`);
   }
   return index;
+}
+
+/**
+ * Resolves the search term by using a specific value or extracting it from the first row of a column.
+ * @param page - The Playwright page
+ * @param columnName - The exact header text of the column
+ * @param colIndex - The resolved index of the column
+ * @param specificSearchTerm - Optional value to search for
+ * @returns The resolved search term
+ */
+export async function getFirstInstanceOfSearchTerm(
+  page: Page,
+  columnName: string,
+  colIndex: number,
+  specificSearchTerm?: string
+): Promise<string> {
+  let searchTerm = specificSearchTerm;
+
+  if (!searchTerm) {
+    // Grab the first row's value for that column
+    const firstRow = page.locator('tbody tr').first();
+    await firstRow.waitFor({ state: 'visible' });
+    const cellText = await firstRow.locator('td').nth(colIndex).locator('a').textContent();
+
+    if (!cellText) {
+      throw new Error(`No text found in the first row of column "${columnName}"`);
+    }
+
+    searchTerm = cellText.trim();
+  } else {
+    searchTerm = searchTerm.trim();
+  }
+
+  return searchTerm;
 }
 
 /**
@@ -182,22 +216,7 @@ export async function searchByFirstColumnValue(page: Page, columnName: string, s
   // Resolve column index dynamically
   const colIndex = await getColumnIndex(page, columnName);
 
-  let searchTerm = specificSearchTerm;
-
-  if (!searchTerm) {
-    // Grab the first row's value for that column
-    const firstRow = page.locator('tbody tr').first();
-    await firstRow.waitFor({ state: 'visible' });
-    const cellText = await firstRow.locator('td').nth(colIndex).locator('a').textContent();
-
-    if (!cellText) {
-      throw new Error(`No text found in the first row of column "${columnName}"`);
-    }
-
-    searchTerm = cellText.trim();
-  } else {
-    searchTerm = searchTerm.trim();
-  }
+  const searchTerm = await getFirstInstanceOfSearchTerm(page, columnName, colIndex, specificSearchTerm);
 
   // Perform the search
   await performSearchInModule(page, searchTerm);
@@ -227,18 +246,24 @@ export async function openReceivingDialogByOrderNumber(page: Page, orderNum: str
   await expect(page.getByRole('dialog').locator('div').filter({ hasText: 'Receiving PO' }).first()).toBeVisible();
 }
 
+export async function clickReceiveAllAndWait(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Receive All' }).click();
+  const inventoryReceiptCompleted = await page.getByText('Inventory receipt completed.');
+  await inventoryReceiptCompleted.waitFor({ state: 'visible', timeout: 15000 });
+}
+
 /**
  * Selects the first checkbox in the grid and clicks 'Receive All'
  * @param page - The Playwright page
  */
 export async function selectFirstCheckboxAndReceive(page: Page): Promise<void> {
   await page.getByRole('gridcell').first().click();
-  await page.getByRole('button', { name: 'Receive All' }).click();
+  await clickReceiveAllAndWait(page);
 }
 
 export async function selectAllCheckboxAndReceive(page: Page): Promise<void> {
   await page.locator('.mat-checkbox-inner-container').first().click();
-  await page.getByRole('button', { name: 'Receive All' }).click();
+  await clickReceiveAllAndWait(page);
 }
 
 /**
@@ -248,7 +273,7 @@ export async function selectAllCheckboxAndReceive(page: Page): Promise<void> {
  */
 export async function searchAndExpectNoRecords(page: Page, searchTerm: string): Promise<void> {
   await performSearchInModule(page, searchTerm);
-  await expect(page.locator('tbody')).toContainText('No records found');
+  await expect(page.locator('tbody')).toContainText('No records found', { timeout: 15000 });
 }
 
 /**
@@ -259,7 +284,7 @@ export async function searchAndExpectNoRecords(page: Page, searchTerm: string): 
  */
 export async function navigateToReceivingAndOpenOrder(page: Page, orderNum?: string): Promise<string> {
   await navigateToModule(page, 'receiving');
-  await waitForLoader(page);
+  await waitForLoader(page, '#blocks');
   const foundOrderNum = await searchByFirstColumnValue(page, 'Order #', orderNum);
   await openReceivingDialogByOrderNumber(page, foundOrderNum);
   return foundOrderNum;
@@ -275,27 +300,31 @@ export async function receivePartialQuantity(page: Page, quantity: string): Prom
   await page.getByRole('gridcell', { name: 'Receiving' }).locator('input').fill(quantity);
   await page.waitForTimeout(2000);
   await page.getByRole('button', { name: 'More' }).click();
-  await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 3000 });
+  await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 30000 });
 }
 
 export async function navigateToAdminConfig(page: Page): Promise<void> {
   await page.goto("https://dev.anterasaas.com/admin/config")
-  await waitForLoader(page);
+  // await waitForLoader(page);
+  const orderSystemConfiguration = page.getByText('Order System Configuration');
+  await orderSystemConfiguration.waitFor({ state: 'visible', timeout: 15000 });
 }
 
 export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page: Page): Promise<void> {
   let isVisible = false;
   try {
-    await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
+    const checkboxLabel = page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)').first();
+    await expect(checkboxLabel).toBeVisible({ timeout: 30000 });
     isVisible = true;
   } catch (e) {
+    console.log('Visibility check failed:', e instanceof Error ? e.message : e);
     isVisible = false;
   }
 
   if (!isVisible) {
     await page.getByText('Work Order Configure work').locator('.mat-form-field-infix').click();
     await page.waitForTimeout(2000);
-    await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)').click();
+    await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)').first().click();
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Order Settings updated')).toBeVisible();
   }

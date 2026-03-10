@@ -1,6 +1,12 @@
 import { type Page, expect } from '@playwright/test';
+import { waitForLoader } from './ui-helpers';
 
 const TIMEOUT_NAVIGATION = 7000;
+export async function navigateToOrdersDirectly(page: Page): Promise<void> {
+  await page.goto('https://dev.anterasaas.com/e-commerce/orders/v1');
+  await page.waitForTimeout(5000);
+  await page.waitForLoadState('networkidle');
+}
 
 export async function navigateToOrders(page: Page): Promise<void> {
   // Open menu
@@ -9,6 +15,7 @@ export async function navigateToOrders(page: Page): Promise<void> {
 
   // Navigate to Orders
   await page.getByText('view_listOrder').click();
+  await page.waitForTimeout(3000);
   await page.getByRole('link', { name: /Orders/i }).click();
 
   // Close sidebar overlay
@@ -98,13 +105,22 @@ export async function fillOrderDates(page: Page, shipDate: string, dueDay: strin
 
 export async function addStockProductToOrder(page: Page, productInHouseNumber: string, quantity: string, color: string, testIdQuantityLocation: string): Promise<void> {
   await page.getByRole('tab', { name: 'Products' }).locator('div').click();
-  await page.getByPlaceholder('Add A New Product').click();
-  await page.getByPlaceholder('Add A New Product').fill(productInHouseNumber);
+  const addNewProduct = page.getByRole('textbox', { name: 'Add A New Product' });
+  await addNewProduct.waitFor({ state: 'visible', timeout: 15000 });
+  await addNewProduct.click();
+  await addNewProduct.fill(productInHouseNumber);
   await page.getByText('+').click();
   await page.getByRole('button', { name: 'Add to Order' }).click();
-  await page.waitForTimeout(5000);
-  await page.locator('div').filter({ hasText: /^Color$/ }).first().click();
-  await page.getByRole('option', { name: color }).click();
+  await waitForLoader(page, '.loading');
+  await page.waitForTimeout(4000);
+  // await page.locator('div').filter({ hasText: /^Color$/ }).first().click();
+  const colorDropdown = page.locator('div').filter({ hasText: /^Color$/ }).first();
+  await colorDropdown.waitFor({ state: 'visible', timeout: 15000 });
+  await colorDropdown.click();
+  await page.waitForTimeout(2000);
+  const colorOption = page.getByRole('option', { name: color });
+  await colorOption.waitFor({ state: 'visible', timeout: 15000 });
+  await colorOption.click();
   await page.waitForTimeout(2000);
   await page.getByTestId(testIdQuantityLocation).fill(quantity);
   await page.waitForTimeout(4000);
@@ -116,7 +132,12 @@ export async function addStockProductToOrder(page: Page, productInHouseNumber: s
 
 export async function updateOrderShippingBilling(page: Page): Promise<void> {
   await page.getByText('Order Details').click();
-  await page.getByRole('button', { name: 'Edit' }).nth(1).click();
+
+  // Wait explicitly for the second Edit button to be visible before clicking
+  // const secondEditButton = page.getByRole('button', { name: 'Edit' }).nth(1);
+  const secondEditButton = page.getByText('Account Details Edit').locator('button').first();
+  await secondEditButton.waitFor({ state: 'visible', timeout: 15000 });
+  await secondEditButton.click();
 
   await page.getByRole('combobox', { name: 'Billing Street' }).click();
   await page.getByRole('combobox', { name: 'Billing Street' }).fill('test');
@@ -184,7 +205,7 @@ export async function toggleSourceOn(page: Page): Promise<void> {
   await page.locator('label').filter({ hasText: 'Source' }).click();
 }
 
-export async function resourcingFromStockToDropship(page: Page, sourceLocation: string | number): Promise<void> {
+export async function resourcingFromStockToDropship(page: Page, sourceLocation: string | number, clickUpdate: boolean = true): Promise<void> {
 
   if (sourceLocation === 'first') {
     await page.getByText('expand_more Source').first().click();
@@ -194,17 +215,30 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   }
 
   await page.waitForTimeout(3000);
-  await expect(page.getByText('Auto Assign').nth(2)).toBeVisible();
+  // Explicitly wait for "Auto Assign" to be visible before DropShip action
+  const autoAssignOption = page.getByText('Auto Assign').nth(2);
+  await autoAssignOption.waitFor({ state: 'visible', timeout: 15000 });
   await page.getByRole('button', { name: 'DropShip' }).click();
   await page.waitForTimeout(3000);
   await page.getByText('Auto Assign').nth(2).click();
   await page.waitForTimeout(3000);
   await expect(page.getByText('Save', { exact: true })).toBeVisible();
   await page.getByText('Save', { exact: true }).click();
-  await page.waitForTimeout(2000);
-  await page.getByRole('button', { name: 'Update' }).click();
-  // await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
-  await expect(await page.getByText('Order updated successfully')).toBeVisible({ timeout: 15000 });
+  if (clickUpdate) {
+    const updateButton = page.getByRole('button', { name: 'Update' });
+    await updateButton.waitFor({ state: 'visible', timeout: 30000 });
+
+    await updateButton.click();
+    await page.waitForTimeout(4000);
+    // await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
+    // await expect(await page.getByText('Order updated successfully').first()).toBeVisible({ timeout: 15000 });
+    const orderUpdated = await page.getByText('Order updated successfully').first()
+    await orderUpdated.waitFor({ state: 'visible', timeout: 15000 });
+    await orderUpdated.waitFor({ state: 'hidden', timeout: 15000 });
+  } else {
+    // Just wait briefly for the modal to close and the page to process
+    await page.waitForTimeout(2000);
+  }
 }
 
 export async function selectFirstLineItem(page: Page): Promise<void> {
@@ -242,7 +276,9 @@ export async function duplicateFirstLineItem(page: Page): Promise<void> {
 }
 
 export async function clickUpdateButton(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Update' }).click();
+  const updateButton = page.getByRole('button', { name: 'Update' });
+  await updateButton.waitFor({ state: 'visible', timeout: 15000 });
+  await updateButton.click();
   await page.waitForTimeout(7000);
 }
 

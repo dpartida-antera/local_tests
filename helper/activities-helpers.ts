@@ -36,7 +36,7 @@ export async function fillAndSaveActivity(page: Page, subject: string): Promise<
  */
 export async function verifyGlobalActivity(page: Page, subject: string): Promise<void> {
   await page.goto('https://dev.anterasaas.com/activities/v1');
-  await waitForLoader(page);
+  await waitForLoader(page, '.loading-container');
   await expect(page.getByText(subject).first()).toBeVisible();
 }
 

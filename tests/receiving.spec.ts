@@ -1,17 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
-import { navigateToModule, waitForLoader, searchByFirstColumnValue, openReceivingDialogByOrderNumber, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect } from '../helper/ui-helpers';
+import { navigateToModule, waitForLoader, searchByFirstColumnValue, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect, performSearchInModule } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
-import { generateRandomString, generateOrderTestData, navigateToOrders, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder } from '../helper/orders';
+import { generateOrderTestData, navigateToOrdersDirectly, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder } from '../helper/orders';
+import { openOrderDetailPageViaMenu, searchAndOpenOrder } from '../helper/order-helpers';
+import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder } from '../helper/production-helpers';
 
 test.describe('receiving suite', () => {
-  test.describe.configure({ timeout: 480000, retries: 1 });
+  test.describe.configure({ timeout: 480000, retries: 0 });
 
   // Verifies the general search works by picking the first Order # from the table and searching it
   test('receiving_general_search', async ({ page }: { page: Page }) => {
     await login(page);
     await navigateToModule(page, 'receiving');
     await waitForLoader(page);
+    await page.waitForTimeout(2000);
     await searchByFirstColumnValue(page, 'Order #');
   });
 
@@ -75,7 +78,7 @@ test.describe('receiving suite', () => {
     await login(page);
 
     // 2. Order Creation
-    await navigateToOrders(page);
+    await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
     await createNewCustomer(page, OrderNameF);
     await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
@@ -105,7 +108,7 @@ test.describe('receiving suite', () => {
     await login(page);
 
     // 2. Order Creation
-    await navigateToOrders(page);
+    await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
     await createNewCustomer(page, OrderNameF);
     await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
@@ -118,8 +121,8 @@ test.describe('receiving suite', () => {
     const orderNumber = await getOrderNumberFromScreen(page);
     await page.waitForTimeout(2000);
     await toggleSourceOn(page);
-    await resourcingFromStockToDropship(page, 'first');
-    await resourcingFromStockToDropship(page, 1);
+    await resourcingFromStockToDropship(page, 'first', false);
+    await resourcingFromStockToDropship(page, 1, true);
     await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectAllCheckboxAndReceive(page);
     await waitForLoader(page);
@@ -135,7 +138,7 @@ test.describe('receiving suite', () => {
     await login(page);
 
     // 2. Order Creation
-    await navigateToOrders(page);
+    await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
     await createNewCustomer(page, OrderNameF);
     await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
@@ -159,7 +162,7 @@ test.describe('receiving suite', () => {
     //search for the order and expecting to not find it
 
   });
-  test.only('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
+  test('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
     const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
 
     await login(page);
@@ -168,8 +171,8 @@ test.describe('receiving suite', () => {
     console.log('navigateToAdminConfig done');
     await makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page);
     console.log('makeSureGroupByAllAttachedDecorationInSingleProductIsSet done');
-    await navigateToOrders(page);
-    console.log('navigateToOrders done');
+    await navigateToOrdersDirectly(page);
+    console.log('navigateToOrdersDirectly done');
     await clickAddOrder(page);
     console.log('clickAddOrder done');
     await createNewCustomer(page, OrderNameF);
@@ -198,9 +201,9 @@ test.describe('receiving suite', () => {
     console.log('page.waitForTimeout done');
     await toggleSourceOn(page);
     console.log('toggleSourceOn done');
-    await resourcingFromStockToDropship(page, 'first');
+    await resourcingFromStockToDropship(page, 'first', false);
     console.log('resourcingFromStockToDropship done');
-    await resourcingFromStockToDropship(page, 1);
+    await resourcingFromStockToDropship(page, 1, true);
     console.log('resourcingFromStockToDropship done');
     await page.reload();
     console.log('page.reload done');
@@ -225,10 +228,62 @@ test.describe('receiving suite', () => {
     await expect(page.getByRole('grid')).toContainText(`Long buttoned shirt DiegoP Stock SKU: 001FD00025 Inhouse ID: 50639720 Part Id: 985222 Work Order: #${orderNumber}-001 Item #: S658 Color: Black Size: S UOM: / Embroidery`);
     await expect(page.getByRole('grid')).toContainText(`Long buttoned shirt DiegoP Stock SKU: 001FD00025 Inhouse ID: 50639720 Part Id: 985222 Work Order: #${orderNumber}-002 Item #: S658 Color: Black Size: S UOM: / Embroidery`);
 
+  });
 
+  test.describe.serial('Production Tags', () => {
+    const orderNumber = '55975';
 
+    test('should add tags to production', async ({ page }: { page: Page }) => {
+      await login(page);
+      console.log('login done');
+      await navigateToOrdersDirectly(page);
+      console.log('navigateToOrdersDirectly done');
+      // oawait searchByFirstColumnValue(page, "Order");
+      const orderPage = await openOrderDetailPageViaMenu(page, orderNumber);
+      console.log('searchAndOpenOrder done');
+      await expect(orderPage.getByRole('heading', { name: 'Basic Order Info' })).toBeVisible({ timeout: 15000 });
+      await orderPage.getByRole('button', { name: 'Actions' }).click();
+      await orderPage.getByRole('menuitem', { name: 'Update Production' }).click();
+      await orderPage.getByRole('button', { name: 'Production Refresh' }).click();
+      await page.bringToFront();
+      await navigateToModule(page, 'productions');
+      await performSearchInModule(page, orderNumber);
+      await modifyModuleTags(page, 'Add Module Tags', 'Fast Production', 'Add');
+      console.log('performSearchInModule done');
+      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+      await expect(page.locator('tbody')).toContainText(orderNumber);
+    });
 
+    test('should remove tags from production', async ({ page }: { page: Page }) => {
+      await login(page);
+      await navigateToModule(page, 'productions');
+      await performSearchInModule(page, orderNumber);
+      await modifyModuleTags(page, 'Remove Module Tags', 'Fast Production', 'Save');
+      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+      await expect(page.locator('tbody')).not.toContainText(orderNumber);
+    });
 
-
-  })
+    test('should add tags to production in Machine View', async ({ page }: { page: Page }) => {
+      await login(page);
+      console.log('login done');
+      await navigateToModule(page, 'productions');
+      await performSearchInModule(page, orderNumber);
+      await page.waitForTimeout(6000);
+      await modifyModuleTagsMachineView(page, 'Add Module Tags', 'Fast Production', 'Add');
+      console.log('performSearchInModule done');
+      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+      await expect(page.getByText('Order#').nth(1)).toBeVisible();
+    });
+    test('should remove tags to production in Machine View', async ({ page }: { page: Page }) => {
+      await login(page);
+      console.log('login done');
+      await navigateToModule(page, 'productions');
+      await performSearchInModule(page, orderNumber);
+      await page.waitForTimeout(6000);
+      await modifyModuleTagsMachineView(page, 'Remove Module Tags', 'Fast Production', 'Save');
+      console.log('performSearchInModule done');
+      await searchByTagAndOrder(page, 'Fast Production', orderNumber);
+      await expect(page.getByText('Pending (8h) 0 Jobs 0 Pieces')).toBeVisible();
+    });
+  });
 });

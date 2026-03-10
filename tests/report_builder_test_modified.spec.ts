@@ -25,7 +25,7 @@ async function openSalesReport(page: Page): Promise<Page> {
 }
 
 test.describe('report builder suite', () => {
-	test.describe.configure({ timeout: 480000, retries: 1 });
+	test.describe.configure({ timeout: 480000, retries: 0 });
 
 	test.beforeAll(async ({ }, testInfo) => {
 		testInfo.setTimeout(120000);
