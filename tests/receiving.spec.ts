@@ -7,7 +7,7 @@ import { openOrderDetailPageViaMenu, searchAndOpenOrder } from '../helper/order-
 import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../helper/production-helpers';
 
 test.describe('receiving suite', () => {
-  test.describe.configure({ timeout: 480000, retries: 0 });
+  test.describe.configure({ timeout: 350000, retries: 0 });
 
   // Verifies the general search works by picking the first Order # from the table and searching it
   test('receiving_general_search', async ({ page }: { page: Page }) => {

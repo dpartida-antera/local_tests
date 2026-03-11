@@ -64,6 +64,7 @@ export async function createNewCustomer(page: Page, customerName: string): Promi
   await page.getByLabel('Customer Name *').click();
   await page.getByRole('combobox', { name: 'Customer Name' }).fill(customerName);
   await page.getByText('add Add Account').click();
+  await page.waitForTimeout(2000);
   await page.getByRole('textbox', { name: 'Name', exact: true }).click();
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill(customerName);
   await page.getByRole('textbox', { name: 'Name', exact: true }).click();

@@ -58,8 +58,8 @@ export async function searchByTagAndOrder(page: Page, tagName: string, orderNumb
   await page.waitForTimeout(2000);
   await page.getByRole('listitem', { name: tagName }).click();
   await page.waitForTimeout(2000);
-  await page.getByText('Search', { exact: true }).click();
-  await page.locator('i').nth(5).click();
+  // await page.getByText('Search', { exact: true }).click();
+  // await page.locator('i').nth(5).click();
   await page.getByRole('textbox', { name: 'Search by Order', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search by Order', exact: true }).fill(orderNumber);
   await page.getByText('Search', { exact: true }).click();
