@@ -246,6 +246,10 @@ export async function openReceivingDialogByOrderNumber(page: Page, orderNum: str
   await expect(page.getByRole('dialog').locator('div').filter({ hasText: 'Receiving PO' }).first()).toBeVisible();
 }
 
+/**
+ * Clicks the 'Receive All' button and waits for the receipt completion notification
+ * @param page - The Playwright page
+ */
 export async function clickReceiveAllAndWait(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Receive All' }).click();
   const inventoryReceiptCompleted = await page.getByText('Inventory receipt completed.');
@@ -261,6 +265,10 @@ export async function selectFirstCheckboxAndReceive(page: Page): Promise<void> {
   await clickReceiveAllAndWait(page);
 }
 
+/**
+ * Selects all checkboxes in the grid by clicking the header checkbox and clicks 'Receive All'
+ * @param page - The Playwright page
+ */
 export async function selectAllCheckboxAndReceive(page: Page): Promise<void> {
   await page.locator('.mat-checkbox-inner-container').first().click();
   await clickReceiveAllAndWait(page);
@@ -303,6 +311,10 @@ export async function receivePartialQuantity(page: Page, quantity: string): Prom
   await expect(page.getByText('Inventory receipt completed.')).toBeVisible({ timeout: 30000 });
 }
 
+/**
+ * Navigates to the admin configuration page for order systems
+ * @param page - The Playwright page
+ */
 export async function navigateToAdminConfig(page: Page): Promise<void> {
   await page.goto("https://dev.anterasaas.com/admin/config")
   // await waitForLoader(page);
@@ -310,6 +322,10 @@ export async function navigateToAdminConfig(page: Page): Promise<void> {
   await orderSystemConfiguration.waitFor({ state: 'visible', timeout: 15000 });
 }
 
+/**
+ * Verifies and applies the "Group by all attached Decoration" setting if it is not already set
+ * @param page - The Playwright page
+ */
 export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(page: Page): Promise<void> {
   let isVisible = false;
   try {
@@ -330,6 +346,13 @@ export async function makeSureGroupByAllAttachedDecorationInSingleProductIsSet(p
   }
 }
 
+/**
+ * Verifies that a specific work order contains the correct details, including location, stock item, and color
+ * @param page - The Playwright page
+ * @param number - The work order number to verify
+ * @param totalNumber - The total count of work orders
+ * @param location - The expected location text
+ */
 export async function verifyWorkOrderIsCorrect(page: Page, number: number, totalNumber: number, location: string): Promise<void> {
   console.log(`verifyWorkOrderIsCorrect called with number=${number}, totalNumber=${totalNumber}`);
   console.log(`Waiting for Work Order (${number} of ${totalNumber})`);

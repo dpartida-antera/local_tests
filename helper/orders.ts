@@ -2,12 +2,20 @@ import { type Page, expect } from '@playwright/test';
 import { waitForLoader } from './ui-helpers';
 
 const TIMEOUT_NAVIGATION = 7000;
+/**
+ * Navigates directly to the orders page URL and waits for the network to be idle.
+ * @param page The Playwright Page object
+ */
 export async function navigateToOrdersDirectly(page: Page): Promise<void> {
   await page.goto('https://dev.anterasaas.com/e-commerce/orders/v1');
   await page.waitForTimeout(5000);
   await page.waitForLoadState('networkidle');
 }
 
+/**
+ * Navigates to the orders page using the application menu and sidebar.
+ * @param page The Playwright Page object
+ */
 export async function navigateToOrders(page: Page): Promise<void> {
   // Open menu
   const menuButton = page.locator('mat-toolbar button', { hasText: 'menu' });
@@ -27,15 +35,24 @@ export async function navigateToOrders(page: Page): Promise<void> {
 
   await page.waitForLoadState('networkidle');
 }
+/**
+ * Generates a random alphanumeric string of a specified length.
+ * @param length The length of the string to generate
+ * @returns The generated random string
+ */
 export function generateRandomString(length: number): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
   let randomString = '';
   for (let i = 0; i < length; i++) {
-    randomString += characters.charAt(Math.floor(Math.random() * characters.length));
+    randomString += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return randomString;
 }
 
+/**
+ * Interface representing test data for an order.
+ */
 export interface OrderTestData {
   randomNameOr: string;
   OrderNameF: string;
@@ -44,6 +61,10 @@ export interface OrderTestData {
   testOrderO: string;
 }
 
+/**
+ * Generates random test data for an order including names and a test email.
+ * @returns The generated OrderTestData
+ */
 export function generateOrderTestData(): OrderTestData {
   const randomNameOr = generateRandomString(10);
   return {
@@ -55,11 +76,20 @@ export function generateOrderTestData(): OrderTestData {
   };
 }
 
+/**
+ * Clicks the speed dial button to initiate adding a new order.
+ * @param page The Playwright Page object
+ */
 export async function clickAddOrder(page: Page): Promise<void> {
   await page.locator('p-speeddial').getByRole('button').click();
   await page.getByRole('menuitem', { name: '' }).click();
 }
 
+/**
+ * Creates a new customer account with the specified name.
+ * @param page The Playwright Page object
+ * @param customerName The name of the customer to create
+ */
 export async function createNewCustomer(page: Page, customerName: string): Promise<void> {
   await page.getByLabel('Customer Name *').click();
   await page.getByRole('combobox', { name: 'Customer Name' }).fill(customerName);
@@ -72,6 +102,13 @@ export async function createNewCustomer(page: Page, customerName: string): Promi
   await page.getByText(customerName).click();
 }
 
+/**
+ * Creates a new contact with the provided first name, last name, and email address.
+ * @param page The Playwright Page object
+ * @param firstName The first name of the contact
+ * @param lastName The last name of the contact
+ * @param email The email address of the contact
+ */
 export async function createNewContact(page: Page, firstName: string, lastName: string, email: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Contact Name' }).click();
   await page.getByRole('combobox', { name: 'Contact Name' }).fill(lastName);
@@ -88,6 +125,12 @@ export async function createNewContact(page: Page, firstName: string, lastName: 
   await page.waitForTimeout(2000);
 }
 
+/**
+ * Fills in the customer name and order identity, then creates the order.
+ * @param page The Playwright Page object
+ * @param customerName The name of the customer
+ * @param orderIdentity The identity/reference for the order
+ */
 export async function fillOrderDetailsAndCreate(page: Page, customerName: string, orderIdentity: string): Promise<void> {
   await page.getByText(customerName).click();
   await page.getByLabel('Order Identity *').click();
@@ -97,6 +140,12 @@ export async function fillOrderDetailsAndCreate(page: Page, customerName: string
   await page.waitForTimeout(2000);
 }
 
+/**
+ * Fills in the customer ship date and due date for an order.
+ * @param page The Playwright Page object
+ * @param shipDate The ship date to set
+ * @param dueDay The due day to set
+ */
 export async function fillOrderDates(page: Page, shipDate: string, dueDay: string): Promise<void> {
   await page.getByLabel('Customer Ship Date *').fill(shipDate);
   await page.locator('mat-form-field').filter({ hasText: 'Due Date *' }).getByLabel('Open calendar').click();
@@ -104,6 +153,14 @@ export async function fillOrderDates(page: Page, shipDate: string, dueDay: strin
   await page.getByRole('button', { name: 'Create' }).click();
 }
 
+/**
+ * Adds a stock product to an order, specifying color, quantity, and location.
+ * @param page The Playwright Page object
+ * @param productInHouseNumber The product number to add
+ * @param quantity The quantity of the product
+ * @param color The color of the product
+ * @param testIdQuantityLocation The test ID for the quantity location input
+ */
 export async function addStockProductToOrder(page: Page, productInHouseNumber: string, quantity: string, color: string, testIdQuantityLocation: string): Promise<void> {
   await page.getByRole('tab', { name: 'Products' }).locator('div').click();
   const addNewProduct = page.getByRole('textbox', { name: 'Add A New Product' });
@@ -131,6 +188,10 @@ export async function addStockProductToOrder(page: Page, productInHouseNumber: s
   // await page.getByRole('button', { name: 'No' }).click();
 }
 
+/**
+ * Updates the shipping and billing address information for an order with test data.
+ * @param page The Playwright Page object
+ */
 export async function updateOrderShippingBilling(page: Page): Promise<void> {
   await page.getByText('Order Details').click();
 
@@ -172,6 +233,10 @@ export async function updateOrderShippingBilling(page: Page): Promise<void> {
   await page.waitForTimeout(3000);
 }
 
+/**
+ * Clicks the book button and waits for the order to be marked as booked.
+ * @param page The Playwright Page object
+ */
 export async function bookOrder(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Book' }).click();
   await page.waitForTimeout(6000);
@@ -201,11 +266,21 @@ export async function getOrderNumberFromScreen(page: Page): Promise<string> {
   return match[1];
 }
 
+/**
+ * Toggles the source filter on the products tab.
+ * @param page The Playwright Page object
+ */
 export async function toggleSourceOn(page: Page): Promise<void> {
   await page.getByRole('tab', { name: 'Products' }).click();
   await page.locator('label').filter({ hasText: 'Source' }).click();
 }
 
+/**
+ * Changes the resourcing of a product from stock to dropship.
+ * @param page The Playwright Page object
+ * @param sourceLocation The source location index or 'first' to select
+ * @param clickUpdate Whether to click the update button after saving (default: true)
+ */
 export async function resourcingFromStockToDropship(page: Page, sourceLocation: string | number, clickUpdate: boolean = true): Promise<void> {
 
   if (sourceLocation === 'first') {
@@ -242,17 +317,30 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   }
 }
 
+/**
+ * Selects the checkbox for the first line item in the grid.
+ * @param page The Playwright Page object
+ */
 export async function selectFirstLineItem(page: Page): Promise<void> {
   await page.locator('.mat-grid-tile-content span.mat-checkbox-inner-container').click();
   await page.waitForTimeout(4000);
 
 }
 
+/**
+ * Clicks the artwork icon for the selected item.
+ * @param page The Playwright Page object
+ */
 export async function selectArtworkIcon(page: Page): Promise<void> {
   await page.locator('#action-artwork').getByText('palette').click();
   await page.waitForTimeout(3000);
 }
 
+/**
+ * Adds an existing artwork to the first selected line item.
+ * @param page The Playwright Page object
+ * @param artworkNumber The artwork number to search for and add (default: 'D007833')
+ */
 export async function addArtworkToFirstLineItem(page: Page, artworkNumber: string = 'D007833'): Promise<void> {
   await selectFirstLineItem(page);
   await selectArtworkIcon(page);
@@ -270,12 +358,20 @@ export async function addArtworkToFirstLineItem(page: Page, artworkNumber: strin
   await page.waitForTimeout(5000);
 }
 
+/**
+ * Duplicates the first line item in the order.
+ * @param page The Playwright Page object
+ */
 export async function duplicateFirstLineItem(page: Page): Promise<void> {
   await page.getByText('more_vert').first().click();
   await page.getByRole('menuitem', { name: 'Duplicate Line' }).click();
   await page.waitForTimeout(4000);
 }
 
+/**
+ * Clicks the update button and waits for the action to complete.
+ * @param page The Playwright Page object
+ */
 export async function clickUpdateButton(page: Page): Promise<void> {
   const updateButton = page.getByRole('button', { name: 'Update' });
   await updateButton.waitFor({ state: 'visible', timeout: 15000 });
@@ -283,6 +379,12 @@ export async function clickUpdateButton(page: Page): Promise<void> {
   await page.waitForTimeout(7000);
 }
 
+/**
+ * Edits the specified artwork to change its location and saves the update.
+ * @param page The Playwright Page object
+ * @param nthArtwork The index for the artwork to edit (1-based, default: 1)
+ * @param location The new location text for the artwork (default: 'Apron Bottom Right')
+ */
 export async function changeArtworkLocation(page: Page, nthArtwork: number = 1, location: string = 'Apron Bottom Right'): Promise<void> {
   await page.getByText('palette').nth(nthArtwork).click();
   await page.getByRole('button', { name: 'Edit' }).click();
@@ -292,15 +394,28 @@ export async function changeArtworkLocation(page: Page, nthArtwork: number = 1, 
   await clickUpdateButton(page);
 }
 
+/**
+ * Asserts that two work orders have been created by checking for the visibility of "Work Order 002".
+ * @param page The Playwright Page object
+ */
 export async function expectTwoWorkOrdersToBeCreated(page: Page): Promise<void> {
   await expect(page.getByText('Work Order 002')).toBeVisible();
 }
 
+/**
+ * Navigates to the documents tab in an order and verifies the quote document is visible.
+ * @param page The Playwright Page object
+ */
 export async function navigateToDocumentsInOrder(page: Page): Promise<void> {
   await page.getByRole('tab', { name: 'Documents' }).click();
   await expect(page.getByText('Quote', { exact: true })).toBeVisible();
 }
 
+/**
+ * Opens a specific work order from the documents sidebar and verifies it is loaded.
+ * @param page The Playwright Page object
+ * @param nthWorkOrder The index of the work order to open (default: 2)
+ */
 export async function openNthWorkOrder(page: Page, nthWorkOrder: number = 2): Promise<void> {
   console.log(`Opening work order ${nthWorkOrder}`);
   console.log(`div:nth-child(2) > .documentTypeSidebar_documents_pdf > div:nth-child(${nthWorkOrder})`);

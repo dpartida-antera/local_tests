@@ -558,7 +558,13 @@ async function verifyRowColumns(
 	return { verified: verifiedCount, skipped: skippedCount };
 }
 
-// Legacy: Navigate through menu to orders page
+/**
+ * Legacy method: Navigates through the menu to the orders page and verifies row columns against the detail page
+ * @param page - The parent Playwright page
+ * @param orderNumber - The order number to search for
+ * @param salesReportPage - The Sales Report page with the table
+ * @param rowIndex - The row index in the sales report table
+ */
 export async function searchOrderOnMainPageViaMenu(
 	page: Page,
 	orderNumber: string,
@@ -575,7 +581,13 @@ export async function searchOrderOnMainPageViaMenu(
 	console.log(`✓ Searched for order ${orderNumber} on main page`);
 }
 
-// Direct URL navigation to orders page
+/**
+ * Navigates directly to the orders page via URL and verifies row columns against the detail page
+ * @param page - The parent Playwright page
+ * @param orderNumber - The order number to search for
+ * @param salesReportPage - The Sales Report page with the table
+ * @param rowIndex - The row index in the sales report table
+ */
 export async function searchOrderOnMainPage(
 	page: Page,
 	orderNumber: string,
