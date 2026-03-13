@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login } from '../helper/auth';
-import { setPageSize, getTableRowCount, verifyPageSize } from '../helper/pagination';
-import { navigateToOrders } from '../helper/orders';
+import { login } from '../../helper/auth';
+import { setPageSize, getTableRowCount, verifyPageSize } from '../../helper/pagination';
+import { navigateToOrders } from '../../helper/orders';
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
@@ -106,19 +106,19 @@ async function goToSalesReport(page: Page): Promise<Page> {
 
 async function columnsSelectedCount(page: Page): Promise<void> {
 	const columnsSelectedElement = await page.getByText('columns selected');
-  const columnsSelectedText = await columnsSelectedElement.innerText();
+	const columnsSelectedText = await columnsSelectedElement.innerText();
 	const columnsSelectedCount = Number(columnsSelectedText.split(' ')[0]);
 	console.log(`Columns selected (from text): ${columnsSelectedCount}`);
 	const selectedColumnsElement = await page.getByRole('columnheader');
 	const selectedColumnsCount = await selectedColumnsElement.count();
 	console.log(`Columns selected (from count): ${selectedColumnsCount}`);
 	expect(columnsSelectedCount).toBe(selectedColumnsCount);
-	
+
 }
 
 async function selectAllColumns(page: Page): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
-  await page.getByRole('checkbox').nth(1).click();
+	await page.getByRole('checkbox').nth(1).click();
 	await page.locator('p-multiselect').click(); // Close the dropdown
 	await page.waitForTimeout(2000); // Wait for the UI to update
 	await columnsSelectedCount(page);
@@ -129,7 +129,7 @@ async function fetchFieldsFromAPI(): Promise<{ labelNames: string[], fieldMap: M
 	// Postman puts ODI2YjBkZTBkYjE2 as username, then encodes "username:" for Basic Auth
 	const username = 'ODI2YjBkZTBkYjE2';
 	const auth = Buffer.from(`${username}:`).toString('base64');
-	
+
 	const response = await fetch(
 		'https://dev.anterasaas.com/protected/api/v1/orders/fields',
 		{
@@ -139,20 +139,20 @@ async function fetchFieldsFromAPI(): Promise<{ labelNames: string[], fieldMap: M
 			}
 		}
 	);
-	
+
 	if (!response.ok) {
 		const errorText = await response.text();
 		console.error(`API error response: ${errorText}`);
 		throw new Error(`API request failed with status ${response.status}: ${errorText}`);
 	}
-	
+
 	const data = await response.json();
 	const labelNames = data.map((field: any) => field.labelName);
 	const fieldMap = new Map<string, string>();
 	data.forEach((field: any) => {
 		fieldMap.set(field.labelName, field.fieldName);
 	});
-	
+
 	console.log(`API returned ${labelNames.length} field labels and ${fieldMap.size} field mappings`);
 	return { labelNames, fieldMap };
 }
@@ -162,21 +162,21 @@ async function compareColumnsWithAPI(page: Page): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
 	await page.waitForTimeout(1000);
 	await page.getByRole('listitem').first().waitFor({ state: 'visible', timeout: 5000 });
-	
+
 	const columnTexts = await page.getByRole('listitem').allTextContents();
 	const columnNames = columnTexts.map(text => text.trim()).filter(text => text.length > 0);
 	console.log(`UI columns (${columnNames.length}): ${columnNames.join(', ')}`);
-	
+
 	await page.locator('p-multiselect').click(); // Close the dropdown
 	await page.waitForTimeout(500);
-	
+
 	// Filter out excluded columns
 	const columnsToCheck = columnNames.filter(col => !EXCLUDED_COLUMNS.includes(col));
 	console.log(`Checking ${columnsToCheck.length} columns (${columnNames.length - columnsToCheck.length} excluded)`);
-	
+
 	// Get field names from API
 	const { labelNames: apiLabelNames } = await fetchFieldsFromAPI();
-	
+
 	// Check if all UI columns exist in API response
 	const missingColumns: string[] = [];
 	for (const columnName of columnsToCheck) {
@@ -184,32 +184,32 @@ async function compareColumnsWithAPI(page: Page): Promise<void> {
 			missingColumns.push(columnName);
 		}
 	}
-	
+
 	if (missingColumns.length > 0) {
 		console.error(`Columns not found in API (${missingColumns.length}): ${missingColumns.join(', ')}`);
 		expect(missingColumns).toEqual([]);
 	}
-	
+
 	console.log('All UI columns are present in the API response ✓');
 }
 
 async function checkColumnNames(page: Page): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
 	await page.waitForTimeout(1000); // Wait for dropdown to open
-	
+
 	// Wait for list items to be visible
 	await page.getByRole('listitem').first().waitFor({ state: 'visible', timeout: 5000 });
-	
+
 	const columnHeaderTexts = await page.getByRole('columnheader').allTextContents();
 	console.log(`Column headers (${columnHeaderTexts.length}): ${columnHeaderTexts.join(', ')}`);
-	
+
 	// Try different checkbox selectors
 	const checkedItemTexts = await page.getByRole('listitem').filter({ has: page.locator('.p-checkbox-checked, [aria-checked="true"]') }).allTextContents();
 	console.log(`Checked items (${checkedItemTexts.length}): ${checkedItemTexts.join(', ')}`);
-	
+
 	await page.locator('p-multiselect').click(); // Close the dropdown
 	await page.waitForTimeout(500);
-	
+
 	const trimmedChecked = checkedItemTexts.map(text => text.trim()).sort();
 	const trimmedHeaders = columnHeaderTexts.map(text => text.trim()).sort();
 	expect(trimmedChecked).toEqual(trimmedHeaders);
@@ -218,7 +218,7 @@ async function checkColumnNames(page: Page): Promise<void> {
 async function getRandomCheckboxIndices(page: Page, count: number, checkedOnly: boolean = false): Promise<number[]> {
 	const listItems = await page.getByRole('listitem').all();
 	const validIndices: number[] = [];
-	
+
 	if (checkedOnly) {
 		// Find all checked items
 		for (let i = 0; i < listItems.length; i++) {
@@ -231,23 +231,23 @@ async function getRandomCheckboxIndices(page: Page, count: number, checkedOnly: 
 		// Use all indices
 		validIndices.push(...Array.from({ length: listItems.length }, (_, i) => i));
 	}
-	
+
 	// Randomly select up to 'count' items
 	const randomIndices = new Set<number>();
 	while (randomIndices.size < Math.min(count, validIndices.length)) {
 		randomIndices.add(validIndices[Math.floor(Math.random() * validIndices.length)]);
 	}
-	
+
 	return Array.from(randomIndices);
 }
 
 async function toggleRandomCheckboxes(page: Page, count: number = 12, checkedOnly: boolean = false): Promise<void> {
 	await page.locator('.p-multiselect-trigger').click();
 	await page.waitForTimeout(1000);
-	
+
 	const listItems = await page.getByRole('listitem').all();
 	const randomIndices = await getRandomCheckboxIndices(page, count, checkedOnly);
-	
+
 	for (const index of randomIndices) {
 		const listItem = listItems[index];
 		const checkbox = listItem.locator('.p-checkbox, .p-checkbox-box, input[type="checkbox"]').first();
@@ -255,17 +255,17 @@ async function toggleRandomCheckboxes(page: Page, count: number = 12, checkedOnl
 		console.log(`${checkedOnly ? 'Un' : ''}toggled checkbox at index ${index}`);
 		await page.waitForTimeout(500);
 	}
-	
+
 	await page.locator('p-multiselect').click();
 	await page.waitForTimeout(1000);
 }
 
 async function testPaginationWithPageSize(page: Page, pageSize: number): Promise<void> {
 	await setPageSize(page, pageSize);
-	
+
 	const rowCount = await getTableRowCount(page);
 	console.log(`Pagination test - Page size: ${pageSize}, Actual rows: ${rowCount}`);
-	
+
 	expect(rowCount).toBe(pageSize);
 	console.log(`✓ Page size ${pageSize} verified with ${rowCount} table rows`);
 }
@@ -550,17 +550,17 @@ test.describe('report builder suite', () => {
 			}
 
 			await columnsSelectedCount(salesReportPage);
-			
+
 			await checkColumnNames(salesReportPage);
 
 			await toggleRandomCheckboxes(salesReportPage, 12);
-			
+
 			await checkColumnNames(salesReportPage);
 
 			await compareColumnsWithAPI(salesReportPage);
-			
+
 			await selectAllColumns(salesReportPage);
-			
+
 			await checkColumnNames(salesReportPage);
 
 		} catch (error) {

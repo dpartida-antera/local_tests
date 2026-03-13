@@ -1,5 +1,5 @@
 import { test, type Page } from '@playwright/test';
-import { login } from '../helper/auth';
+import { login } from '../../helper/auth';
 import {
 	goToReportBuilder,
 	openMenu,
@@ -12,7 +12,7 @@ import {
 	testPaginationWithPageSize,
 	getRandomOrderNumbers,
 	searchOrderOnMainPage,
-} from '../helper/report-builder-test-helpers';
+} from '../../helper/report-builder-test-helpers';
 
 const PAGE_SIZE = 100;
 const TEST_DELAY_MS = 10000;
@@ -20,7 +20,7 @@ const TEST_DELAY_MS = 10000;
 test.describe('report builder suite', () => {
 	test.describe.configure({ timeout: 480000 });
 
-	test.beforeAll(async ({}, testInfo) => {
+	test.beforeAll(async ({ }, testInfo) => {
 		testInfo.setTimeout(240000); //
 		const delay = testInfo.workerIndex * TEST_DELAY_MS;
 		if (delay > 0) {

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ConfigLoader } from '../helper/ConfigLoader';
+import { ConfigLoader } from '../../helper/ConfigLoader';
 
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 

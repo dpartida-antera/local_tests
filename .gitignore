@@ -7,6 +7,6 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 docs/Diego/*
-
+.env
 # Config files with sensitive data
 test-config.json

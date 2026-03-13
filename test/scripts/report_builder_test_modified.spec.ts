@@ -1,6 +1,6 @@
 import { test, type Page } from '@playwright/test';
-import { login } from '../helper/auth';
-import { openMenu } from '../helper/ui-helpers';
+import { login } from '../../helper/auth';
+import { openMenu } from '../../helper/ui-helpers';
 import {
 	goToReportBuilder,
 	goToSalesReport,
@@ -12,7 +12,7 @@ import {
 	testPaginationWithPageSize,
 	getRandomOrderNumbers,
 	searchOrderOnMainPage,
-} from '../helper/report-builder-test-helpers';
+} from '../../helper/report-builder-test-helpers';
 
 const PAGE_SIZE = 100;
 const TEST_DELAY_MS = 10000;

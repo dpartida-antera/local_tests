@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ConfigLoader } from '../helper/ConfigLoader';
-import { login } from '../helper/auth';
-import { generateRandomString } from '../helper/orders';
+import { ConfigLoader } from '../../helper/ConfigLoader';
+import { login } from '../../helper/auth';
+import { generateRandomString } from '../../helper/orders';
 
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 const TIMEOUT_FILTER = 5000;
@@ -26,7 +26,7 @@ test.describe('Global Navigation & Search Rules', () => {
 
     // Source [1]: Global search finds Name, Email, Order#, PO# but NOT Address.
   });
-    
+
   test('Module Level Search should find Address', async ({ page }) => {
     test.setTimeout(480000);
     // Source [6]: Column specific search finds fields global search misses.
@@ -37,16 +37,16 @@ test.describe('Global Navigation & Search Rules', () => {
     const filterIcon = page.locator('i').nth(5);
     await filterIcon.click({ timeout: TIMEOUT_FILTER });
     await page.waitForTimeout(1000);
-    
+
     // Select filter option
     await page.getByRole('textbox', { name: 'Search by Bill Address1' }).click();
     await page.getByRole('textbox', { name: 'Search by Bill Address1' }).fill('144 Brays Chapel Rd');
-    
+
     // Wait for the table to update with filtered results
     await page.waitForTimeout(2000); // Additional wait for results to populate
     await page.getByText('Search', { exact: true }).click();
 
-    
+
     // Should find the record now
     await expect(page.locator('table tbody tr')).toHaveCount(1);
   });
@@ -62,12 +62,12 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     await page.goto(`${config.baseUrl}/accounts/v1`);
     await page.locator('#addNewButton').click();
     await page.waitForTimeout(2000);
-    
+
   });
 
   test('CRITICAL: Autocomplete fields must use dropdown selection', async ({ page }) => {
     test.setTimeout(480000);
-    
+
     const salesRepInputempty = page
       .locator('div')
       .filter({ hasText: /^Sales Rep$/ })
@@ -104,7 +104,7 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
 
   test('CRITICAL: Parent Co. autocomplete field must use dropdown selection', async ({ page }) => {
     test.setTimeout(480000);
-    
+
     const parentCoInputEmpty = page
       .locator('div')
       .filter({ hasText: /^Parent Co\.$/ })
@@ -148,11 +148,11 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
     // Locate the Notes textarea by finding the Notes span/label and navigating to its textarea
     const notesLabel = page.getByText('Notes', { exact: true }).first();
     const notesField = notesLabel.locator('xpath=../..').locator('textarea');
-    
+
     // Fill in the notes field with test text
     await notesField.waitFor({ state: 'visible', timeout: 5000 });
     await notesField.fill('test');
-    
+
     // Assert that the notes field contains the expected text
     await expect(notesField).toHaveValue('test');
   });
@@ -170,12 +170,12 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
   //   // Locate the Notes textarea
   //   const notesLabel = page.getByText('Notes', { exact: true }).first();
   //   const notesField = notesLabel.locator('xpath=../..').locator('textarea');
-    
+
   //   // Fill with 501 characters (exceeds limit)
   //   await notesField.waitFor({ state: 'visible', timeout: 5000 });
   //   const longText = 'A'.repeat(501);
   //   await notesField.fill(longText);
-    
+
 
   //   // Try to save
   //   await page.getByRole('button', { name: 'Save' }).click();
@@ -221,10 +221,10 @@ test.describe('Activities module', () => {
     // 6. Wait for the UI to update and check if the first row has different values
     // If the first row still has the same values, the row was not removed as expected
     await page.waitForTimeout(1000);
-    
+
     const newFirstRow = page.locator('tbody tr').first();
     const newColumnCount = await newFirstRow.locator('td').count();
-    
+
     let rowValuesMatch = true;
     if (newColumnCount === columnCount) {
       for (let i = 0; i < columnCount; i++) {
@@ -237,10 +237,10 @@ test.describe('Activities module', () => {
     } else {
       rowValuesMatch = false;
     }
-    
+
     // Assert that the first row has changed (old row was removed)
     expect(rowValuesMatch).toBe(false);
-    
+
   });
 
 });

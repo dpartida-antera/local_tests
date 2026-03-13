@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ConfigLoader } from '../helper/ConfigLoader';
-import { login } from '../helper/auth';
-import { generateRandomString } from '../helper/orders';
-import { performGlobalSearch, searchByBillAddress, testAutocompleteField, getNotesField, navigateToNewAccount } from '../helper/ui-helpers';
+import { ConfigLoader } from '../../helper/ConfigLoader';
+import { login } from '../../helper/auth';
+import { generateRandomString } from '../../helper/orders';
+import { performGlobalSearch, searchByBillAddress, testAutocompleteField, getNotesField, navigateToNewAccount } from '../../helper/ui-helpers';
 
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 const TIMEOUT_FILTER = 5000;
@@ -15,7 +15,7 @@ test.describe('Global Navigation & Search Rules', () => {
 
   test('Global Search should find PO/Order numbers but FAIL on Address', async ({ page }) => {
     await login(page);
-    
+
     // 1. Positive Test: Search by Order Number (Valid)
     await performGlobalSearch(page, '53614'); // Example from transcript [5]
     // await expect(page.getByText('Order #53614')).toBeVisible();
@@ -29,7 +29,7 @@ test.describe('Global Navigation & Search Rules', () => {
 
     // Source [1]: Global search finds Name, Email, Order#, PO# but NOT Address.
   });
-		
+
   test('Module Level Search should find Address', async ({ page }) => {
     test.setTimeout(480000);
     // Source [6]: Column specific search finds fields global search misses.
@@ -37,7 +37,7 @@ test.describe('Global Navigation & Search Rules', () => {
     await page.goto(`${config.baseUrl}/accounts/v1`);
 
     await searchByBillAddress(page, '144 Brays Chapel Rd', 5, TIMEOUT_FILTER);
-    
+
     // Should find the record now
     await expect(page.locator('table tbody tr')).toHaveCount(1);
   });
@@ -80,7 +80,7 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
 
     const notesField = await getNotesField(page);
     await notesField.fill('test');
-    
+
     // Assert that the notes field contains the expected text
     await expect(notesField).toHaveValue('test');
   });
@@ -95,11 +95,11 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
 
   //   // Get Notes field using helper
   //   const notesField = await getNotesField(page);
-    
+
   //   // Fill with 501 characters (exceeds limit)
   //   const longText = 'A'.repeat(501);
   //   await notesField.fill(longText);
-    
+
   //   // Try to save
   //   await page.getByRole('button', { name: 'Save' }).click();
 
@@ -126,10 +126,10 @@ test.describe('Customer Record - Business Logic & "Rick Rules"', () => {
 test.describe('Activities module', () => {
 
   test.beforeEach(async ({ page }) => {
-		test.setTimeout(480000);
+    test.setTimeout(480000);
 
-		await login(page);
-		await page.goto(`${config.baseUrl}/activities/v1`);
+    await login(page);
+    await page.goto(`${config.baseUrl}/activities/v1`);
     await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 10000 });
   });
 
@@ -148,7 +148,7 @@ test.describe('Activities module', () => {
     await expect.poll(async () => {
       return await page.locator('tbody tr').first().innerText();
     }, { timeout: 10000 }).not.toBe(initialRowText);
-    
+
   });
 
 });

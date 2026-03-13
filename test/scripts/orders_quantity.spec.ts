@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ConfigLoader } from '../helper/ConfigLoader';
+import { ConfigLoader } from '../../helper/ConfigLoader';
 
 const config = ConfigLoader.loadConfig<{ baseUrl: string; user: string; password: string }>('test-config.json');
 test('orders_quantity_test', async ({ page }: { page: Page }) => {
@@ -19,17 +19,17 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
   await page.locator('.fuse-sidebar-overlay').click();
   await page.waitForTimeout(3000);
 
-	// Filter by something to ensure enough entries but not so many
-	// Filter by Status = Billed
+  // Filter by something to ensure enough entries but not so many
+  // Filter by Status = Billed
   await page.locator('i').nth(5).click();
-	await page.waitForTimeout(3000);
+  await page.waitForTimeout(3000);
   await page.getByText('Select options').nth(5).click();
-	await page.getByText('Select options').nth(5).click();
+  await page.getByText('Select options').nth(5).click();
   await page.locator('.p-ripple > .p-checkbox > .p-checkbox-box').first().click();
   await page.waitForTimeout(1000);
-	await page.getByText('Search', { exact: true }).click();
+  await page.getByText('Search', { exact: true }).click();
   await page.waitForTimeout(2000);
-	
+
   // Get total entries
   const showingText = page.locator('text=Showing');
   const total_entries_text = await showingText.innerText();
@@ -51,7 +51,7 @@ test('orders_quantity_test', async ({ page }: { page: Page }) => {
   while (processed_entries < total_entries) {
     loop_counter++;
     if (loop_counter > max_loops) throw new Error('Too many loops! Possible infinite loop.');
-		await page.waitForTimeout(5000); // wait for page to load
+    await page.waitForTimeout(5000); // wait for page to load
     // Click only the header checkbox (select all rows on this page)
     const headerCheckbox = page.locator('th p-tristatecheckbox .p-checkbox-box');
     const isChecked = await headerCheckbox.getAttribute('aria-checked');
