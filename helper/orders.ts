@@ -61,6 +61,11 @@ export interface OrderTestData {
   testOrderO: string;
 }
 
+export interface OrderTestDataSimple {
+  OrderNameF: string;
+  testOrderO: string;
+}
+
 /**
  * Generates random test data for an order including names and a test email.
  * @returns The generated OrderTestData
@@ -73,6 +78,17 @@ export function generateOrderTestData(): OrderTestData {
     OrderNameL: 'Lastname' + randomNameOr,
     emailLeadO: randomNameOr + '@anterasoftware.com',
     testOrderO: 'test order' + randomNameOr,
+  };
+}
+
+/**
+ * Generates random test data for an order including names and a test email.
+ * @returns The generated OrderTestData
+ */
+export function getOrderTestData(): OrderTestDataSimple {
+  return {
+    OrderNameF: 'Diego PartidaContact',
+    testOrderO: 'test order',
   };
 }
 
@@ -126,13 +142,47 @@ export async function createNewContact(page: Page, firstName: string, lastName: 
 }
 
 /**
+ * Shared helper that selects a value from a named combobox.
+ * Waits for the combobox to be visible and enabled, types the search term,
+ * then clicks the first matching option.
+ */
+async function selectFromCombobox(page: Page, comboboxName: string, searchTerm: string, optionText: string): Promise<void> {
+  const combo = page.getByRole('combobox', { name: comboboxName });
+  await expect(combo).toBeVisible({ timeout: 30_000 });
+  await expect(combo).toBeEnabled({ timeout: 30_000 });
+  await combo.fill(searchTerm);
+  const option = page.getByRole('option', { name: optionText }).first();
+  await expect(option).toBeVisible({ timeout: 30_000 });
+  await option.click();
+}
+
+/**
+ * Selects an existing customer from the Customer Name combobox.
+ * @param page The Playwright Page object
+ * @param customerName The text to type to filter results
+ * @param contactName The option text to click
+ */
+export async function selectExistingCustomer(page: Page, customerName: string = 'Diego Partida Custome', contactName: string = 'Diego Partida Custome'): Promise<void> {
+  await selectFromCombobox(page, 'Customer Name', customerName, contactName);
+}
+
+/**
+ * Selects an existing contact from the Contact Name combobox.
+ * @param page The Playwright Page object
+ * @param searchTerm The text to type to filter results
+ * @param optionText The option text to click
+ */
+export async function selectExistingContact(page: Page, searchTerm: string = 'Diego PartidaContac', optionText: string = 'Diego PartidaContact'): Promise<void> {
+  await selectFromCombobox(page, 'Contact Name', searchTerm, optionText);
+}
+
+/**
  * Fills in the customer name and order identity, then creates the order.
  * @param page The Playwright Page object
  * @param customerName The name of the customer
  * @param orderIdentity The identity/reference for the order
  */
 export async function fillOrderDetailsAndCreate(page: Page, customerName: string, orderIdentity: string): Promise<void> {
-  await page.getByText(customerName).click();
   await page.getByLabel('Order Identity *').click();
   await page.getByLabel('Order Identity *').fill(orderIdentity);
   await page.getByRole('button', { name: 'Create' }).click();

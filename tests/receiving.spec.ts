@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from '../helper/auth';
 import { navigateToModule, waitForLoader, searchByFirstColumnValue, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect, performSearchInModule } from '../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../helper/activities-helpers';
-import { generateOrderTestData, navigateToOrdersDirectly, clickAddOrder, createNewCustomer, createNewContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder } from '../helper/orders';
+import { generateOrderTestData, navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData } from '../helper/orders';
 import { openOrderDetailPageViaMenu, searchAndOpenOrder } from '../helper/order-helpers';
 import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../helper/production-helpers';
 
@@ -72,7 +72,7 @@ test.describe('receiving suite', () => {
 
   test('should receive by selecting individual checkbox', async ({ page }: { page: Page }) => {
     //order test
-    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
+    const { OrderNameF, testOrderO } = getOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -80,8 +80,8 @@ test.describe('receiving suite', () => {
     // 2. Order Creation
     await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
-    await createNewCustomer(page, OrderNameF);
-    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    await selectExistingCustomer(page);
+    await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     await fillOrderDates(page, '22-09-2030', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
@@ -102,7 +102,7 @@ test.describe('receiving suite', () => {
 
   test('should receive by selecting all checkbox', async ({ page }: { page: Page }) => {
     //order test
-    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
+    const { OrderNameF, testOrderO } = getOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -110,8 +110,8 @@ test.describe('receiving suite', () => {
     // 2. Order Creation
     await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
-    await createNewCustomer(page, OrderNameF);
-    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    await selectExistingCustomer(page);
+    await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     await fillOrderDates(page, '22-09-2030', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
@@ -132,7 +132,7 @@ test.describe('receiving suite', () => {
   });
   test('PartialReceiving', async ({ page }: { page: Page }) => {
     //order test
-    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
+    const { OrderNameF, testOrderO } = getOrderTestData();
 
     // 1. Login with specific user
     await login(page);
@@ -140,8 +140,8 @@ test.describe('receiving suite', () => {
     // 2. Order Creation
     await navigateToOrdersDirectly(page);
     await clickAddOrder(page);
-    await createNewCustomer(page, OrderNameF);
-    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
+    await selectExistingCustomer(page);
+    await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     await fillOrderDates(page, '22-09-2030', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
@@ -163,7 +163,7 @@ test.describe('receiving suite', () => {
 
   });
   test('CorrectWorkOrderNumbersInReceiving', async ({ page }: { page: Page }) => {
-    const { OrderNameF, OrderNameL, emailLeadO, testOrderO } = generateOrderTestData();
+    const { OrderNameF, testOrderO } = getOrderTestData();
 
     await login(page);
     console.log('login done');
@@ -175,10 +175,10 @@ test.describe('receiving suite', () => {
     console.log('navigateToOrdersDirectly done');
     await clickAddOrder(page);
     console.log('clickAddOrder done');
-    await createNewCustomer(page, OrderNameF);
-    console.log('createNewCustomer done');
-    await createNewContact(page, OrderNameF, OrderNameL, emailLeadO);
-    console.log('createNewContact done');
+    await selectExistingCustomer(page);
+    console.log('selectExistingCustomer done');
+    await selectExistingContact(page);
+    console.log('selectExistingContact done');
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     console.log('fillOrderDetailsAndCreate done');
     await fillOrderDates(page, '22-09-2030', '28');
