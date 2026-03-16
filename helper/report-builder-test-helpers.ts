@@ -22,7 +22,10 @@ import {
 	openOrderDetailPageViaMenu,
 	extractAndSetOrderTotal
 } from './order-helpers';
-import { openMenu } from './ui-helpers';
+import { openMenu as uiOpenMenu } from './ui-helpers';
+
+// Re-export openMenu for convenience in test files
+export { uiOpenMenu as openMenu };
 
 // Timeout constants
 const TIMEOUT_NAVIGATION = 50000; // 50 seconds - for navigation and element visibility

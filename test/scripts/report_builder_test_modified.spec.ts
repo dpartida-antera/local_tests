@@ -1,8 +1,8 @@
 import { test, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
-import { openMenu } from '../../helper/ui-helpers';
 import {
 	goToReportBuilder,
+	openMenu,
 	goToSalesReport,
 	columnsSelectedCount,
 	checkColumnNames,
