@@ -212,7 +212,7 @@ export async function fillOrderDates(page: Page, shipDate: string, dueDay: strin
  * @param testIdQuantityLocation The test ID for the quantity location input
  */
 export async function addStockProductToOrder(page: Page, productInHouseNumber: string, quantity: string, color: string, testIdQuantityLocation: string): Promise<void> {
-  await page.getByRole('tab', { name: 'Products' }).locator('div').click();
+  await ensureProductsTabOpen(page);
   const addNewProduct = page.getByRole('textbox', { name: 'Add A New Product' });
   await addNewProduct.waitFor({ state: 'visible', timeout: 15000 });
   await addNewProduct.click();
@@ -317,12 +317,37 @@ export async function getOrderNumberFromScreen(page: Page): Promise<string> {
 }
 
 /**
+ * Ensures the Products tab is open before interacting with product-level controls.
+ * Clicks only when the tab is not already selected.
+ * @param page The Playwright Page object
+ */
+export async function ensureProductsTabOpen(page: Page): Promise<void> {
+  const productsTab = page.getByRole('tab', { name: 'Products' });
+  const isSelected = await productsTab.getAttribute('aria-selected');
+  if (isSelected !== 'true') {
+    await productsTab.click();
+  }
+}
+
+/**
  * Toggles the source filter on the products tab.
  * @param page The Playwright Page object
  */
 export async function toggleSourceOn(page: Page): Promise<void> {
-  await page.getByRole('tab', { name: 'Products' }).click();
+  await ensureProductsTabOpen(page);
   await page.locator('label').filter({ hasText: 'Source' }).click();
+}
+
+async function openSourceMenu(page: Page, sourceLocation: string | number): Promise<void> {
+  if (sourceLocation === 'first') {
+    await page.getByText('expand_more Source').first().click();
+  } else {
+    const index = typeof sourceLocation === 'number' ? sourceLocation : parseInt(sourceLocation, 10);
+    const expandButtons = page.getByText('expand_more Source').nth(index);
+    await expandButtons.waitFor({ state: 'visible', timeout: 15000 });
+    await expect(expandButtons).toBeEnabled({ timeout: 15000 });
+    await expandButtons.click();
+  }
 }
 
 /**
@@ -333,17 +358,23 @@ export async function toggleSourceOn(page: Page): Promise<void> {
  */
 export async function resourcingFromStockToDropship(page: Page, sourceLocation: string | number, clickUpdate: boolean = true): Promise<void> {
 
-  if (sourceLocation === 'first') {
-    await page.getByText('expand_more Source').first().click();
-  } else {
-    const index = typeof sourceLocation === 'number' ? sourceLocation : parseInt(sourceLocation, 10);
-    await page.getByText('expand_more Source').nth(index).click();
-  }
+  await openSourceMenu(page, sourceLocation);
 
   await page.waitForTimeout(3000);
   // Explicitly wait for "Auto Assign" to be visible before DropShip action
-  const autoAssignOption = page.getByText('Auto Assign').nth(2);
-  await autoAssignOption.waitFor({ state: 'visible', timeout: 15000 });
+  // const autoAssignOption = page.getByText('Auto Assign').nth(2);
+  // await autoAssignOption.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(page.getByText('Stock ReleaseDropShip')).toBeVisible({ timeout: 15000 });
+
+  await page.getByText('Unreserve', { exact: true }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(page.locator('.loading')).toBeVisible();
+  await expect(page.locator('.loading')).toBeHidden({ timeout: 20000 });
+
+  await openSourceMenu(page, sourceLocation);
+
+
+
   await page.getByRole('button', { name: 'DropShip' }).click();
   await page.waitForTimeout(3000);
   await page.getByText('Auto Assign').nth(2).click();
@@ -358,12 +389,37 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
     await page.waitForTimeout(4000);
     // await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
     // await expect(await page.getByText('Order updated successfully').first()).toBeVisible({ timeout: 15000 });
-    const orderUpdated = await page.getByText('Order updated successfully').first()
+    const orderUpdated = await page.getByText('Order updated successfully').first();
     await orderUpdated.waitFor({ state: 'visible', timeout: 15000 });
     await orderUpdated.waitFor({ state: 'hidden', timeout: 15000 });
   } else {
     // Just wait briefly for the modal to close and the page to process
     await page.waitForTimeout(2000);
+  }
+}
+
+export interface ResourcingStep {
+  sourceLocation: string | number;
+  clickUpdate?: boolean;
+}
+
+/**
+ * Runs source toggle + resourcing only when "Source: Dropship" is not already visible.
+ * @param page The Playwright Page object
+ * @param steps One or more resourcing steps (default: first line with update)
+ */
+export async function ensureSourceDropshipIfNeeded(page: Page, steps: ResourcingStep[] = [{ sourceLocation: 'first' }]): Promise<void> {
+  await ensureProductsTabOpen(page);
+  await expect(page.getByText('Source:').first()).toBeVisible({ timeout: 15000 });
+
+  const sourceDropshipVisible = await page.getByText('Source: Dropship').first().isVisible();
+  if (sourceDropshipVisible) {
+    return;
+  }
+
+  await toggleSourceOn(page);
+  for (const step of steps) {
+    await resourcingFromStockToDropship(page, step.sourceLocation, step.clickUpdate ?? true);
   }
 }
 

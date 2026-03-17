@@ -1,6 +1,6 @@
 import { test, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
-import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, getOrderTestData } from '../../helper/orders';
+import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, ensureSourceDropshipIfNeeded, getOrderTestData } from '../../helper/orders';
 import { navigateToReceivingAndOpenOrder, selectAllCheckboxAndReceive, waitForLoader, searchAndExpectNoRecords } from '../../helper/ui-helpers';
 
 test.describe('receiving suite', () => {
@@ -26,9 +26,10 @@ test.describe('receiving suite', () => {
     await bookOrder(page);
     const orderNumber = await getOrderNumberFromScreen(page);
     await page.waitForTimeout(2000);
-    await toggleSourceOn(page);
-    await resourcingFromStockToDropship(page, 'first', false);
-    await resourcingFromStockToDropship(page, 1, true);
+    await ensureSourceDropshipIfNeeded(page, [
+      { sourceLocation: 'first', clickUpdate: true },
+      { sourceLocation: 1, clickUpdate: true }
+    ]);
     await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectAllCheckboxAndReceive(page);
     await waitForLoader(page);

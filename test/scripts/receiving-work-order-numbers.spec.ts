@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
-import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData } from '../../helper/orders';
+import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, ensureSourceDropshipIfNeeded, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData } from '../../helper/orders';
 import { navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect } from '../../helper/ui-helpers';
 
 test.describe('receiving suite', () => {
@@ -43,12 +43,11 @@ test.describe('receiving suite', () => {
     console.log('getOrderNumberFromScreen done');
     await page.waitForTimeout(2000);
     console.log('page.waitForTimeout done');
-    await toggleSourceOn(page);
-    console.log('toggleSourceOn done');
-    await resourcingFromStockToDropship(page, 'first', false);
-    console.log('resourcingFromStockToDropship done');
-    await resourcingFromStockToDropship(page, 1, true);
-    console.log('resourcingFromStockToDropship done');
+    await ensureSourceDropshipIfNeeded(page, [
+      { sourceLocation: 'first', clickUpdate: true },
+      { sourceLocation: 1, clickUpdate: true }
+    ]);
+    console.log('ensureSourceDropshipIfNeeded done');
     await page.reload();
     console.log('page.reload done');
     // await navigateToReceivingAndOpenOrder(page, orderNumber);

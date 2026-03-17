@@ -20,7 +20,7 @@ async function login(page: Page): Promise<void> {
     console.log('Using username:', config.user);
     console.log('Password length:', password.length); // Should be 47 characters
 
-    await page.goto(`${config.baseUrl}/login`);
+    await page.goto(`${config.baseUrl}/login`, { waitUntil: 'networkidle' });
     await page.getByLabel('Username').click();
     await page.getByLabel('Username').fill(config.user);
 
@@ -30,7 +30,7 @@ async function login(page: Page): Promise<void> {
     await page.getByLabel('LOGIN').click();
     await page.waitForTimeout(2000);
 
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*dashboard/, { timeout: 15000 });
 
     const username = page.locator('span.username.mr-12').nth(1);
     await expect(username).toHaveText('Antera Testing');

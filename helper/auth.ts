@@ -15,7 +15,7 @@ export async function login(page: Page): Promise<void> {
   await page.getByLabel('Password').fill(password);
   await page.getByLabel('LOGIN').click();
   await page.waitForTimeout(2000);
-  await expect(page).toHaveURL(/.*dashboard/);
+  await expect(page).toHaveURL(/.*dashboard/, { timeout: 15000 });
   const username = page.locator('span.username.mr-12').nth(1);
   await expect(username).toHaveText('Antera Testing');
   console.log('Login complete');

@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
 import { navigateToModule, waitForLoader, searchByFirstColumnValue, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect, performSearchInModule } from '../../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../../helper/activities-helpers';
-import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, toggleSourceOn, resourcingFromStockToDropship, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData } from '../../helper/orders';
+import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, ensureSourceDropshipIfNeeded, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData } from '../../helper/orders';
 import { openOrderDetailPageViaMenu } from '../../helper/order-helpers';
 import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../../helper/production-helpers';
 
@@ -89,8 +89,7 @@ test.describe('receiving suite', () => {
     await bookOrder(page);
     const orderNumber = await getOrderNumberFromScreen(page);
     await page.waitForTimeout(2000);
-    await toggleSourceOn(page);
-    await resourcingFromStockToDropship(page, 'first');
+    await ensureSourceDropshipIfNeeded(page);
     await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectFirstCheckboxAndReceive(page);
     await waitForLoader(page);
@@ -120,9 +119,10 @@ test.describe('receiving suite', () => {
     await bookOrder(page);
     const orderNumber = await getOrderNumberFromScreen(page);
     await page.waitForTimeout(2000);
-    await toggleSourceOn(page);
-    await resourcingFromStockToDropship(page, 'first', false);
-    await resourcingFromStockToDropship(page, 1, true);
+    await ensureSourceDropshipIfNeeded(page, [
+      { sourceLocation: 'first', clickUpdate: true },
+      { sourceLocation: 1, clickUpdate: true }
+    ]);
     await navigateToReceivingAndOpenOrder(page, orderNumber);
     await selectAllCheckboxAndReceive(page);
     await waitForLoader(page);
@@ -149,8 +149,7 @@ test.describe('receiving suite', () => {
     await bookOrder(page);
     const orderNumber = await getOrderNumberFromScreen(page);
     await page.waitForTimeout(2000);
-    await toggleSourceOn(page);
-    await resourcingFromStockToDropship(page, 'first');
+    await ensureSourceDropshipIfNeeded(page);
     await navigateToReceivingAndOpenOrder(page, orderNumber);
     await receivePartialQuantity(page, '1');
     await navigateToReceivingAndOpenOrder(page, orderNumber);
@@ -199,11 +198,12 @@ test.describe('receiving suite', () => {
     console.log('getOrderNumberFromScreen done');
     await page.waitForTimeout(2000);
     console.log('page.waitForTimeout done');
-    await toggleSourceOn(page);
+    await ensureSourceDropshipIfNeeded(page, [
+      { sourceLocation: 'first', clickUpdate: true },
+      { sourceLocation: 1, clickUpdate: true }
+    ]);
     console.log('toggleSourceOn done');
-    await resourcingFromStockToDropship(page, 'first', false);
     console.log('resourcingFromStockToDropship done');
-    await resourcingFromStockToDropship(page, 1, true);
     console.log('resourcingFromStockToDropship done');
     await page.reload();
     console.log('page.reload done');
