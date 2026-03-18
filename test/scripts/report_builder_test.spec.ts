@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
 import { setPageSize, getTableRowCount, verifyPageSize } from '../../helper/pagination';
 import { navigateToOrders } from '../../helper/orders';
+import { BASE_URL } from '../../helper/base-url';
 // Constants
 const MAX_LOOPS_MULTIPLIER = 5;
 const TIMEOUT_NAVIGATION = 7000;
@@ -131,7 +132,7 @@ async function fetchFieldsFromAPI(): Promise<{ labelNames: string[], fieldMap: M
 	const auth = Buffer.from(`${username}:`).toString('base64');
 
 	const response = await fetch(
-		'https://dev.anterasaas.com/protected/api/v1/orders/fields',
+		`${BASE_URL}/protected/api/v1/orders/fields`,
 		{
 			method: 'GET',
 			headers: {

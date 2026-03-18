@@ -1,5 +1,6 @@
 import { type Page, expect } from '@playwright/test';
 import { waitForLoader } from './ui-helpers';
+import { BASE_URL } from './base-url';
 
 const TIMEOUT_NAVIGATION = 7000;
 /**
@@ -7,7 +8,7 @@ const TIMEOUT_NAVIGATION = 7000;
  * @param page The Playwright Page object
  */
 export async function navigateToOrdersDirectly(page: Page): Promise<void> {
-  await page.goto('https://dev.anterasaas.com/e-commerce/orders/v1');
+  await page.goto(`${BASE_URL}/e-commerce/orders/v1`);
   await page.waitForTimeout(5000);
   await page.waitForLoadState('networkidle');
 }
@@ -196,11 +197,15 @@ export async function fillOrderDetailsAndCreate(page: Page, customerName: string
  * @param shipDate The ship date to set
  * @param dueDay The due day to set
  */
-export async function fillOrderDates(page: Page, shipDate: string, dueDay: string): Promise<void> {
+export async function fillOrderDates(page: Page, shipDate: string, dueDay: string, inHandsDay: string): Promise<void> {
   await page.getByLabel('Customer Ship Date *').fill(shipDate);
   await page.locator('mat-form-field').filter({ hasText: 'Due Date *' }).getByLabel('Open calendar').click();
   await page.getByText(dueDay, { exact: true }).click();
+  await page.locator('mat-form-field').filter({ hasText: 'Customer In-Hands Date' }).getByLabel('Open calendar').click();
+  await page.getByText(inHandsDay, { exact: true }).click();
   await page.getByRole('button', { name: 'Create' }).click();
+  await waitForLoader(page);
+
 }
 
 /**
@@ -323,10 +328,7 @@ export async function getOrderNumberFromScreen(page: Page): Promise<string> {
  */
 export async function ensureProductsTabOpen(page: Page): Promise<void> {
   const productsTab = page.getByRole('tab', { name: 'Products' });
-  const isSelected = await productsTab.getAttribute('aria-selected');
-  if (isSelected !== 'true') {
-    await productsTab.click();
-  }
+  await productsTab.click();
 }
 
 /**
@@ -370,16 +372,14 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await page.getByRole('button', { name: 'Yes' }).click();
   await expect(page.locator('.loading')).toBeVisible();
   await expect(page.locator('.loading')).toBeHidden({ timeout: 20000 });
-
+  await page.waitForTimeout(3000);
   await openSourceMenu(page, sourceLocation);
-
-
-
   await page.getByRole('button', { name: 'DropShip' }).click();
   await page.waitForTimeout(3000);
   await page.getByText('Auto Assign').nth(2).click();
   await page.waitForTimeout(3000);
   await expect(page.getByText('Save', { exact: true })).toBeVisible();
+  await expect(page.getByText('Save', { exact: true })).toBeEnabled();
   await page.getByText('Save', { exact: true }).click();
   if (clickUpdate) {
     const updateButton = page.getByRole('button', { name: 'Update' });

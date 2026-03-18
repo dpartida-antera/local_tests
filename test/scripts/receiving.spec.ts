@@ -83,7 +83,7 @@ test.describe('receiving suite', () => {
     await selectExistingCustomer(page);
     await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     await updateOrderShippingBilling(page);
     await bookOrder(page);
@@ -112,7 +112,7 @@ test.describe('receiving suite', () => {
     await selectExistingCustomer(page);
     await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     await addStockProductToOrder(page, '50639720', '10', 'Green', 'quantity-input-1-0');
     await updateOrderShippingBilling(page);
@@ -143,7 +143,7 @@ test.describe('receiving suite', () => {
     await selectExistingCustomer(page);
     await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     await updateOrderShippingBilling(page);
     await bookOrder(page);
@@ -180,7 +180,7 @@ test.describe('receiving suite', () => {
     console.log('selectExistingContact done');
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     console.log('fillOrderDetailsAndCreate done');
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     console.log('fillOrderDates done');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     console.log('addStockProductToOrder done');

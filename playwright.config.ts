@@ -23,6 +23,12 @@ export default defineConfig({
   retries: 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 0 : undefined,
+  /* Playwright wipes this folder at the start of every run. */
+  outputDir: "./test-results/playwright",
+  /* Keep output only for failed tests from the current run. */
+  preserveOutput: "failures-only",
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+ 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

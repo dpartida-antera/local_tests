@@ -13,6 +13,7 @@
 import { expect, type Page } from '@playwright/test';
 import { setPageSize, getTableRowCount } from './pagination';
 import { navigateToOrders } from './orders';
+import { BASE_URL } from './base-url';
 import { type APIField, getAllLabelNames } from './api-fields-helper';
 import { normalizeColumnName, REPORT_BUILDER_MISSING_COLUMNS_ALLOWLIST } from './report-builder-columns';
 import {
@@ -158,7 +159,7 @@ async function fetchFieldsFromAPI(module: string = 'orders'): Promise<APIField[]
 	const auth = Buffer.from(`${username}:`).toString('base64');
 
 	const response = await fetch(
-		'https://dev.anterasaas.com/protected/content/get-fields-list',
+		`${BASE_URL}/protected/content/get-fields-list`,
 		{
 			method: 'POST',
 			headers: {
@@ -189,7 +190,7 @@ async function fetchOrderFieldsFromAPI(): Promise<APIField[]> {
 	const auth = Buffer.from(`${username}:`).toString('base64');
 
 	const response = await fetch(
-		'https://dev.anterasaas.com/protected/api/v1/orders/fields',
+		`${BASE_URL}/protected/api/v1/orders/fields`,
 		{
 			method: 'GET',
 			headers: {

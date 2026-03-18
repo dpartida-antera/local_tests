@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { BASE_URL } from '../../helper/base-url';
 
 test('receiving_stock_api_fetch', async () => {
   const endpoint = 'https://dev-playwright.aether-stores.io/public/api/v1/advance/products/stock/6563';
@@ -15,7 +16,7 @@ test('receiving_stock_api_fetch', async () => {
       color: 'No Color',
       live: 0,
     },
-    advanceUrl: 'https://dev.anterasaas.com/protected',
+    advanceUrl: `${BASE_URL}/protected`,
   };
 
   const response = await fetch(endpoint, {

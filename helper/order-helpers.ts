@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { navigateToOrders, navigateToOrdersDirectly } from './orders';
 import { waitForLoader } from './ui-helpers';
+import { BASE_URL } from './base-url';
 
 // Timeout for navigation
 const TIMEOUT_NAVIGATION = 50000;
@@ -273,7 +274,7 @@ export async function openOrderDetailPageDirectly(
   orderNumber: string
 ): Promise<Page> {
   await page.bringToFront();
-  await page.goto('https://dev.anterasaas.com/e-commerce/orders/v1');
+  await page.goto(`${BASE_URL}/e-commerce/orders/v1`);
   await page.waitForLoadState('networkidle');
 
   const searchBox = page.getByRole('textbox', { name: 'Search', exact: true });

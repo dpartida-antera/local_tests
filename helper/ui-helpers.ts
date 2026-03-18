@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Locator } from '@playwright/test';
+import { BASE_URL } from './base-url';
 
 /**
  * Opens the main navigation menu by clicking the menu button
@@ -15,7 +16,7 @@ export async function openMenu(page: Page): Promise<void> {
  * @param moduleName - The name of the module (e.g., 'receiving', 'accounts')
  */
 export async function navigateToModule(page: Page, moduleName: string): Promise<void> {
-  await page.goto(`https://dev.anterasaas.com/${moduleName}/v1`);
+  await page.goto(`${BASE_URL}/${moduleName}/v1`);
 }
 
 /**
@@ -316,7 +317,7 @@ export async function receivePartialQuantity(page: Page, quantity: string): Prom
  * @param page - The Playwright page
  */
 export async function navigateToAdminConfig(page: Page): Promise<void> {
-  await page.goto("https://dev.anterasaas.com/admin/config")
+  await page.goto(`${BASE_URL}/admin/config`)
   // await waitForLoader(page);
   const orderSystemConfiguration = page.getByText('Order System Configuration');
   await orderSystemConfiguration.waitFor({ state: 'visible', timeout: 15000 });

@@ -19,7 +19,7 @@ test.describe('receiving suite', () => {
     await selectExistingCustomer(page);
     await selectExistingContact(page);
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     await updateOrderShippingBilling(page);
     await bookOrder(page);

@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { waitForLoader } from './ui-helpers';
+import { BASE_URL } from './base-url';
 
 /**
  * Opens the activities sidebar from a dialog (e.g. Order Detail or Receiving PO)
@@ -35,7 +36,7 @@ export async function fillAndSaveActivity(page: Page, subject: string): Promise<
  * @param subject - The subject of the activity to verify
  */
 export async function verifyGlobalActivity(page: Page, subject: string): Promise<void> {
-  await page.goto('https://dev.anterasaas.com/activities/v1');
+  await page.goto(`${BASE_URL}/activities/v1`);
   await waitForLoader(page, '.loading-container');
   await expect(page.getByText(subject).first()).toBeVisible();
 }

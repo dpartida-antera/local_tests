@@ -25,7 +25,7 @@ test.describe('receiving suite', () => {
     console.log('selectExistingContact done');
     await fillOrderDetailsAndCreate(page, OrderNameF, testOrderO);
     console.log('fillOrderDetailsAndCreate done');
-    await fillOrderDates(page, '22-09-2030', '28');
+    await fillOrderDates(page, '22-09-2030', '28', '28');
     console.log('fillOrderDates done');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     console.log('addStockProductToOrder done');
