@@ -193,20 +193,65 @@ export async function fillOrderDetailsAndCreate(page: Page, customerName: string
 }
 
 /**
- * Fills in the customer ship date and due date for an order.
+ * Fills in the customer ship date, due date, and in-hands date for an order.
  * @param page The Playwright Page object
  * @param shipDate The ship date to set
  * @param dueDay The due day to set
+ * @param inHandsDay The in-hands day to set
  */
 export async function fillOrderDates(page: Page, shipDate: string, dueDay: string, inHandsDay: string): Promise<void> {
+  const resolvedDueDay = resolveCalendarDay(dueDay, shipDate);
+  const resolvedInHandsDay = resolveCalendarDay(inHandsDay, shipDate);
+
   await page.getByLabel('Customer Ship Date *').fill(shipDate);
   await page.locator('mat-form-field').filter({ hasText: 'Due Date *' }).getByLabel('Open calendar').click();
-  await page.getByText(dueDay, { exact: true }).click();
+  await clickCalendarDay(page, resolvedDueDay);
   await page.locator('mat-form-field').filter({ hasText: 'Customer In-Hands Date' }).getByLabel('Open calendar').click();
-  await page.getByText(inHandsDay, { exact: true }).click();
+  await clickCalendarDay(page, resolvedInHandsDay);
   await page.getByRole('button', { name: 'Create' }).click();
   await waitForLoader(page);
 
+}
+
+function resolveCalendarDay(day: string, fallbackDate: string): string {
+  const normalizedDay = normalizeDay(day);
+  if (normalizedDay) {
+    return normalizedDay;
+  }
+
+  const fallbackDay = normalizeDay(extractDayFromDate(fallbackDate));
+  if (fallbackDay) {
+    return fallbackDay;
+  }
+
+  throw new Error(`Unable to resolve a valid calendar day. Received day="${day}" and fallbackDate="${fallbackDate}"`);
+}
+
+function extractDayFromDate(dateValue: string): string {
+  const match = dateValue.match(/^(\d{1,2})[-/.]\d{1,2}[-/.]\d{2,4}$/);
+  return match?.[1] ?? '';
+}
+
+function normalizeDay(dayValue: string): string {
+  const trimmedDay = (dayValue ?? '').trim();
+  if (!trimmedDay) {
+    return '';
+  }
+
+  const parsedDay = Number.parseInt(trimmedDay, 10);
+  if (Number.isNaN(parsedDay) || parsedDay < 1 || parsedDay > 31) {
+    return '';
+  }
+
+  return String(parsedDay);
+}
+
+async function clickCalendarDay(page: Page, day: string): Promise<void> {
+  if (!day) {
+    throw new Error('Calendar day is required to select a date.');
+  }
+
+  await page.getByText(day, { exact: true }).first().click();
 }
 
 /**
