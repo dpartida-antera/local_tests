@@ -599,7 +599,7 @@ export async function selectFirstLineItem(page: Page): Promise<void> {
  */
 export async function selectArtworkIcon(page: Page): Promise<void> {
   await page.locator('#action-artwork').getByText('palette').click();
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
 }
 
 /**
