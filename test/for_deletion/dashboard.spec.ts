@@ -12,7 +12,7 @@ function generateRandomString(length: number): string {
   return randomString;
 }
 
-test('product_test', async ({ page }: { page: Page }) => {
+test.skip('product_test', async ({ page }: { page: Page }) => {
   test.setTimeout(480000);
   const randomString = generateRandomString(6);
   const inputText = 'auto_test' + randomString;

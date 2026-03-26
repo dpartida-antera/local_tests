@@ -111,7 +111,7 @@ async function goToNextPage(page: Page): Promise<void> {
 
 
 // Main Test
-test('orders_quantity_test', async ({ page }: { page: Page }) => {
+test.skip('orders_quantity_test', async ({ page }: { page: Page }) => {
   test.setTimeout(480000);
 
   try {

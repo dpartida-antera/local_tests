@@ -13,12 +13,13 @@ import {
 	getRandomOrderNumbers,
 	searchOrderOnMainPage,
 } from '../../helper/report-builder-test-helpers';
+import { login_report_builder } from '../../helper/auth_report_builder';
 
 const PAGE_SIZE = 100;
 const TEST_DELAY_MS = 10000;
 
 async function openSalesReport(page: Page): Promise<Page> {
-	await login(page);
+	await login_report_builder(page);
 	await openMenu(page);
 	const reportBuilderPage = await goToReportBuilder(page);
 	return goToSalesReport(reportBuilderPage);
@@ -43,7 +44,7 @@ test.describe('report builder suite', () => {
 	});
 
 	// Validates that random order numbers in the report match details on the main page.
-	test.only('report_builder_order_details_match', async ({ page }: { page: Page }) => {
+	test('report_builder_order_details_match', async ({ page }: { page: Page }) => {
 		const salesReportPage = await openSalesReport(page);
 
 		const rowsWithOrders = await getRandomOrderNumbers(salesReportPage, 5);

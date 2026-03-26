@@ -12,15 +12,13 @@
 
 import { expect, type Page } from '@playwright/test';
 import { setPageSize, getTableRowCount } from './pagination';
-import { navigateToOrders } from './orders';
+import { navigateToOrders, openOrderDetailPageDirectly, openOrderDetailPageViaMenu, } from './orders';
 import { BASE_URL } from './base-url';
 import { type APIField, getAllLabelNames } from './api-fields-helper';
 import { normalizeColumnName, REPORT_BUILDER_MISSING_COLUMNS_ALLOWLIST } from './report-builder-columns';
 import {
 	normalizeNumericString,
 	getOrderDetailFieldValue,
-	openOrderDetailPageDirectly,
-	openOrderDetailPageViaMenu,
 	extractAndSetOrderTotal
 } from './order-helpers';
 import { openMenu as uiOpenMenu } from './ui-helpers';

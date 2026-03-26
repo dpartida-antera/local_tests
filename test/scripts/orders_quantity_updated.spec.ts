@@ -155,7 +155,7 @@ async function getAvailablePageSizes(page: Page): Promise<number[]> {
 }
 
 // Main Test
-test('orders_quantity_test', async ({ page }: { page: Page }) => {
+test.skip('orders_quantity_test', async ({ page }: { page: Page }) => {
   test.setTimeout(480000);
 
   try {

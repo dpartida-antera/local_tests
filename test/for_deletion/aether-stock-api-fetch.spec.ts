@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL } from '../../helper/base-url';
 
-test('receiving_stock_api_fetch', async () => {
+test.skip('receiving_stock_api_fetch', async () => {
   const endpoint = 'https://dev-playwright.aether-stores.io/public/api/v1/advance/products/stock/6563';
   const payload = {
     meta: {

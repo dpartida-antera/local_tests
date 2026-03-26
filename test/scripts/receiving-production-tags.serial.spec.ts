@@ -1,8 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
 import { navigateToModule, performSearchInModule } from '../../helper/ui-helpers';
-import { navigateToOrdersDirectly } from '../../helper/orders';
-import { openOrderDetailPageViaMenu } from '../../helper/order-helpers';
+import { navigateToOrdersDirectly, openOrderDetailPageViaMenu } from '../../helper/orders';
 import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../../helper/production-helpers';
 
 test.describe.serial('Production Tags', () => {

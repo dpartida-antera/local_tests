@@ -1,7 +1,6 @@
 import { type Page, expect } from '@playwright/test';
 import { waitForLoader } from './ui-helpers';
 import { BASE_URL } from './base-url';
-import { searchAndOpenOrder } from './order-helpers';
 
 const TIMEOUT_NAVIGATION = 7000;
 /**
