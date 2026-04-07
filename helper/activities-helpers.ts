@@ -1,6 +1,5 @@
 import { expect, type Page } from '@playwright/test';
 import { waitForLoader } from './ui-helpers';
-import { BASE_URL } from './base-url';
 
 /**
  * Opens the activities sidebar from a dialog (e.g. Order Detail or Receiving PO)
@@ -8,6 +7,7 @@ import { BASE_URL } from './base-url';
  */
 export async function openActivitiesSidebar(page: Page): Promise<void> {
   await page.getByRole('dialog').getByText('Activities').click();
+  await page.waitForTimeout(2000);
   await expect(page.getByRole('complementary').locator('div').filter({ hasText: 'Activities' }).first()).toBeVisible();
 }
 
@@ -25,9 +25,15 @@ export async function clickAddActivityButton(page: Page): Promise<void> {
  * @param subject - The subject text to fill in
  */
 export async function fillAndSaveActivity(page: Page, subject: string): Promise<void> {
-  await page.locator('#subject').fill(subject);
+  const subjectInput = page.locator('div').filter({ hasText: /^Subject\*$/ }).getByRole('textbox');
+  await expect(subjectInput).toBeVisible({ timeout: 40000 });
+  await expect(subjectInput).toBeEnabled({ timeout: 40000 });
+  await subjectInput.click();
+  await subjectInput.fill(subject);
+
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('complementary').locator('div').filter({ hasText: 'Activities' }).first()).toBeVisible();
+  await page.waitForTimeout(2000);
 }
 
 /**
@@ -36,7 +42,7 @@ export async function fillAndSaveActivity(page: Page, subject: string): Promise<
  * @param subject - The subject of the activity to verify
  */
 export async function verifyGlobalActivity(page: Page, subject: string): Promise<void> {
-  await page.goto(`${BASE_URL}/activities/v1`);
+  await page.goto('https://dev.anterasaas.com/activities/v1');
   await waitForLoader(page, '.loading-container');
   await expect(page.getByText(subject).first()).toBeVisible();
 }
@@ -56,8 +62,9 @@ export async function openFirstActivityItem(page: Page): Promise<void> {
  * @param newSubject - The new subject text to fill in
  */
 export async function editAndSaveActivity(page: Page, newSubject: string): Promise<void> {
-  const subjectInput = page.locator('#subject');
-  await subjectInput.waitFor({ state: 'visible', timeout: 30000 });
+  const subjectInput = page.locator('div').filter({ hasText: /^Subject\*$/ }).getByRole('textbox');
+  await expect(subjectInput).toBeVisible({ timeout: 30000 });
+  await expect(subjectInput).toBeEnabled({ timeout: 30000 });
   await subjectInput.click();
   await subjectInput.fill(newSubject);
 

@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { waitForLoader } from './ui-helpers';
 
 /**
  * Adds or removes a tag from the module in Normal View
@@ -23,7 +24,12 @@ export async function modifyModuleTags(page: Page, action: 'Add Module Tags' | '
  */
 async function modifyModuleTagsWithViewConfig(page: Page, viewLocator: string, action: 'Add Module Tags' | 'Remove Module Tags', tagName: string, confirmButton: 'Add' | 'Save', rowIconLocator: string = '.p-element.pi') {
   await page.locator(viewLocator).click();
-  await page.waitForTimeout(3000);
+  await waitForLoader(page);
+    // await expect(page.getByRole('progressbar').first()).not.toBeVisible({ timeout: 40000 });
+
+  if (viewLocator === '.pi.pi-desktop') {
+    await expect(page.getByText('(8h)').first()).toBeVisible({ timeout: 70000 });
+  }
   await page.getByText('Pending').first().click();
   await page.waitForTimeout(2000);
   await page.locator(rowIconLocator).first().click();

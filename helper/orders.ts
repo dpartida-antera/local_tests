@@ -262,6 +262,7 @@ async function clickCalendarDay(page: Page, day: string): Promise<void> {
  * @param testIdQuantityLocation The test ID for the quantity location input
  */
 export async function addStockProductToOrder(page: Page, productInHouseNumber: string, quantity: string, color: string, testIdQuantityLocation: string): Promise<void> {
+  console.log('calling ensureProductsTabOpen from addStockProductToOrder');
   await ensureProductsTabOpen(page);
   const addNewProduct = page.getByRole('textbox', { name: 'Add A New Product' });
   await addNewProduct.waitFor({ state: 'visible', timeout: 15000 });
@@ -333,6 +334,7 @@ export async function updateOrderShippingBilling(page: Page): Promise<void> {
   await page.waitForTimeout(3000);
 }
 
+
 /**
  * Navigates to orders page via menu and searches for an order
  * @param page - The main page
@@ -354,7 +356,6 @@ export async function openOrderDetailPageViaMenu(
 
   return await searchAndOpenOrder(page, orderNumber);
 }
-
 
 /**
  * Navigates to orders page via direct URL and searches for an order
@@ -445,7 +446,6 @@ export async function searchAndOpenOrder(page: Page, orderNumber: string): Promi
 
   return orderPage;
 }
-  
 
 /**
  * Clicks the book button and waits for the order to be marked as booked.
@@ -453,7 +453,8 @@ export async function searchAndOpenOrder(page: Page, orderNumber: string): Promi
  */
 export async function bookOrder(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Book' }).click();
-  await page.waitForTimeout(6000);
+  // await page.waitForTimeout(6000);
+  await waitForLoader(page);
   await page.getByText('Booked', { exact: true }).click();
   await page.waitForTimeout(5000);
 }
@@ -495,6 +496,7 @@ export async function ensureProductsTabOpen(page: Page): Promise<void> {
  * @param page The Playwright Page object
  */
 export async function toggleSourceOn(page: Page): Promise<void> {
+  console.log('calling ensureProductsTabOpen from toggleSourceOn');
   await ensureProductsTabOpen(page);
   await page.locator('label').filter({ hasText: 'Source' }).click();
 }
@@ -545,7 +547,7 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
     await updateButton.waitFor({ state: 'visible', timeout: 30000 });
 
     await updateButton.click();
-    await page.waitForTimeout(4000);
+    await page.waitForTimeout(6000);
     // await expect(await page.getByText('Group by all attached Decoration in single Product (Common Variation + Location)')).toBeVisible({ timeout: 30000 });
     // await expect(await page.getByText('Order updated successfully').first()).toBeVisible({ timeout: 15000 });
     const orderUpdated = await page.getByText('Order updated successfully').first();
@@ -568,6 +570,8 @@ export interface ResourcingStep {
  * @param steps One or more resourcing steps (default: first line with update)
  */
 export async function ensureSourceDropshipIfNeeded(page: Page, steps: ResourcingStep[] = [{ sourceLocation: 'first' }]): Promise<void> {
+  
+  console.log('calling ensureProductsTabOpen from ensureSourceDropshipIfNeeded');
   await ensureProductsTabOpen(page);
   await expect(page.getByText('Source:').first()).toBeVisible({ timeout: 15000 });
 
@@ -641,7 +645,7 @@ export async function clickUpdateButton(page: Page): Promise<void> {
   const updateButton = page.getByRole('button', { name: 'Update' });
   await updateButton.waitFor({ state: 'visible', timeout: 15000 });
   await updateButton.click();
-  await page.waitForTimeout(7000);
+  await page.waitForTimeout(9000);
 }
 
 /**

@@ -119,20 +119,27 @@ export async function searchByBillAddress(
  * Waits for a loader/spinner to appear and then disappear
  * Useful for waiting for async operations to complete
  * @param page - The Playwright page
- * @param selector - CSS selector for the loader element (default: '.loader')
- * @param timeout - Maximum time to wait (default: 50000 = TIMEOUT_NAVIGATION)
+ * @param selector - CSS selector for the loader element (default: 'mat-progress-spinner, .loader, .loading')
+ * @param timeout - Maximum time to wait (default: 90000 = 90s)
  */
-export async function waitForLoader(page: Page, selector: string = '.loader', timeout: number = 50000): Promise<void> {
+export async function waitForLoader(page: Page, selector: string = 'mat-progress-spinner, .loader, .loading', timeout: number = 90000): Promise<void> {
   // Wait for loader to appear (indicates operation has started)
   const loader = page.locator(selector);
-  await loader.waitFor({ state: 'visible', timeout }).catch(() => {
-    console.log(`Loader '${selector}' did not appear or already finished`);
-  });
+  
+  let loaderWasVisible = false;
+  try {
+    await loader.waitFor({ state: 'visible', timeout: 5000 });
+    loaderWasVisible = true;
+  } catch (err) {
+    // Loader did not appear in short time. This is okay for fast pages that render without a spinner.
+    console.log(`Loader '${selector}' did not appear within 5s (might be instant).`);
+  }
 
-  // Wait for loader to disappear (indicates operation is complete)
-  await loader.waitFor({ state: 'hidden', timeout }).catch(() => {
-    console.log(`Loader '${selector}' already hidden`);
-  });
+  // If loader was visible, wait for it to disappear
+  if (loaderWasVisible) {
+    await loader.waitFor({ state: 'hidden', timeout });
+  }
+
 }
 
 /**
@@ -253,6 +260,7 @@ export async function openReceivingDialogByOrderNumber(page: Page, orderNum: str
  */
 export async function clickReceiveAllAndWait(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Receive All' }).click();
+  await waitForLoader(page);
   const inventoryReceiptCompleted = await page.getByText('Inventory receipt completed.');
   await inventoryReceiptCompleted.waitFor({ state: 'visible', timeout: 15000 });
 }
