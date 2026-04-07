@@ -34,6 +34,8 @@ export const REPORT_BUILDER_MISSING_COLUMNS_ALLOWLIST = new Set([
 	'Vouched Gross Profit',
 	'Vouched Gross Profit Percent',
 	'Workflow Status',
+	'Parent Account Name',
+	'Tag Name',
 ].map(normalizeLabelName));
 
 export function normalizeColumnName(name: string): string {
