@@ -25,7 +25,7 @@ export async function clickAddActivityButton(page: Page): Promise<void> {
  * @param subject - The subject text to fill in
  */
 export async function fillAndSaveActivity(page: Page, subject: string): Promise<void> {
-  const subjectInput = page.locator('div').filter({ hasText: /^Subject\*$/ }).getByRole('textbox');
+  const subjectInput = page.locator('div').filter({ hasText: /^Subject\*$/ }).getByRole('textbox').last();
   await expect(subjectInput).toBeVisible({ timeout: 30_000 });
   await expect(subjectInput).toBeEnabled({ timeout: 30_000 });
   await subjectInput.fill(subject);
