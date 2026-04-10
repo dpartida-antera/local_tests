@@ -19,6 +19,7 @@ test.describe('receiving suite', () => {
       await orderPage.getByRole('button', { name: 'Actions' }).click();
       await orderPage.getByRole('menuitem', { name: 'Update Production' }).click();
       await orderPage.getByRole('button', { name: 'Production Refresh' }).click();
+      await orderPage.waitForLoadState('networkidle');
 
       await page.bringToFront();
       await navigateToModule(page, 'productions');

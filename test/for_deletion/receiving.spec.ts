@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from '../../helper/auth';
 import { navigateToModule, waitForLoader, searchByFirstColumnValue, selectFirstCheckboxAndReceive, searchAndExpectNoRecords, selectAllCheckboxAndReceive, receivePartialQuantity, navigateToReceivingAndOpenOrder, makeSureGroupByAllAttachedDecorationInSingleProductIsSet, navigateToAdminConfig, verifyWorkOrderIsCorrect, performSearchInModule } from '../../helper/ui-helpers';
 import { openActivitiesSidebar, clickAddActivityButton, fillAndSaveActivity, verifyGlobalActivity, openFirstActivityItem, editAndSaveActivity } from '../../helper/activities-helpers';
-import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, ensureSourceDropshipIfNeeded, addArtworkToFirstLineItem, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData, openOrderDetailPageViaMenu } from '../../helper/orders';
+import { navigateToOrdersDirectly, clickAddOrder, selectExistingCustomer, selectExistingContact, fillOrderDetailsAndCreate, fillOrderDates, addStockProductToOrder, updateOrderShippingBilling, bookOrder, getOrderNumberFromScreen, ensureSourceDropshipIfNeeded, addArtworkToAllLineItems, duplicateFirstLineItem, changeArtworkLocation, expectTwoWorkOrdersToBeCreated, navigateToDocumentsInOrder, openNthWorkOrder, getOrderTestData, openOrderDetailPageViaMenu } from '../../helper/orders';
 import { modifyModuleTags, modifyModuleTagsMachineView, searchByTagAndOrder, modifyModuleTagsStatusView } from '../../helper/production-helpers';
 
 test.describe('receiving suite', () => {
@@ -183,8 +183,8 @@ test.describe('receiving suite', () => {
     console.log('fillOrderDates done');
     await addStockProductToOrder(page, '50639720', '10', 'Black', 'quantity-input-0-0');
     console.log('addStockProductToOrder done');
-    await addArtworkToFirstLineItem(page);
-    console.log('addArtworkToFirstLineItem done');
+    await addArtworkToAllLineItems(page);
+    console.log('addArtworkToAllLineItems done');
     await duplicateFirstLineItem(page);
     console.log('duplicateFirstLineItem done');
     await changeArtworkLocation(page, 2, 'Apron Bottom Right');

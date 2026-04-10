@@ -30,6 +30,7 @@ async function modifyModuleTagsWithViewConfig(page: Page, viewLocator: string, a
   if (viewLocator === '.pi.pi-desktop') {
     await expect(page.getByText('(8h)').first()).toBeVisible({ timeout: 70000 });
   }
+  await expect(page.locator('.cdk-drag.task').first()).toBeVisible({ timeout: 70000 });
   await page.getByText('Pending').first().click();
   await page.waitForTimeout(2000);
   await page.locator(rowIconLocator).first().click();

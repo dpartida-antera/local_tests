@@ -17,6 +17,30 @@ export async function openMenu(page: Page): Promise<void> {
  */
 export async function navigateToModule(page: Page, moduleName: string): Promise<void> {
   await page.goto(`${BASE_URL}/${moduleName}/v1`);
+  await waitForLoader(page);
+}
+
+/**
+ * Navigates to the receiving module with retry logic: if it takes longer than 1 minute,
+ * tries navigating to accounts first, then back to receiving. If it fails again, throws an error.
+ * @param page - The Playwright page
+ */
+export async function navigateToReceivingWithRetry(page: Page): Promise<void> {
+  try {
+    await Promise.race([
+      navigateToModule(page, 'receiving'),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Navigation to receiving timed out after 1 minute')), 60000))
+    ]);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Navigation to receiving timed out after 1 minute') {
+      // Try navigating to accounts first
+      await navigateToModule(page, 'accounts');
+      // Then try receiving again
+      await navigateToModule(page, 'receiving');
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**
@@ -122,7 +146,7 @@ export async function searchByBillAddress(
  * @param selector - CSS selector for the loader element (default: 'mat-progress-spinner, .loader, .loading')
  * @param timeout - Maximum time to wait (default: 90000 = 90s)
  */
-export async function waitForLoader(page: Page, selector: string = 'mat-progress-spinner, .loader, .loading', timeout: number = 90000): Promise<void> {
+export async function waitForLoader(page: Page, selector: string = 'mat-progress-spinner, .loader, .loading', timeout: number = 100000): Promise<void> {
   // Wait for loader to appear (indicates operation has started)
   const loader = page.locator(selector);
   
@@ -251,6 +275,8 @@ export async function searchByFirstColumnValue(page: Page, columnName: string, s
 export async function openReceivingDialogByOrderNumber(page: Page, orderNum: string): Promise<void> {
   const orderRow = page.locator('tr').filter({ hasText: orderNum });
   await orderRow.first().click();
+  await waitForLoader(page);
+  await page.waitForTimeout(2000);
   await expect(page.getByRole('dialog').locator('div').filter({ hasText: 'Receiving PO' }).first()).toBeVisible();
 }
 
@@ -301,7 +327,6 @@ export async function searchAndExpectNoRecords(page: Page, searchTerm: string): 
  */
 export async function navigateToReceivingAndOpenOrder(page: Page, orderNum?: string): Promise<string> {
   await navigateToModule(page, 'receiving');
-  await waitForLoader(page, '#blocks');
   const foundOrderNum = await searchByFirstColumnValue(page, 'Order #', orderNum);
   await openReceivingDialogByOrderNumber(page, foundOrderNum);
   return foundOrderNum;

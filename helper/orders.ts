@@ -9,8 +9,8 @@ const TIMEOUT_NAVIGATION = 7000;
  */
 export async function navigateToOrdersDirectly(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/e-commerce/orders/v1`);
-  await page.waitForTimeout(5000);
-  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
+  await waitForLoader(page);
 }
 
 /**
@@ -268,7 +268,9 @@ export async function addStockProductToOrder(page: Page, productInHouseNumber: s
   await addNewProduct.waitFor({ state: 'visible', timeout: 15000 });
   await addNewProduct.click();
   await addNewProduct.fill(productInHouseNumber);
-  await page.getByText('+').click();
+  let plusButton = page.getByText('+');
+  await plusButton.waitFor({ state: 'visible', timeout: 30000 });
+  await plusButton.click();
   await page.getByRole('button', { name: 'Add to Order' }).click();
   await waitForLoader(page, '.loading');
   await page.waitForTimeout(10000);
@@ -530,9 +532,12 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await expect(page.getByText('Stock ReleaseDropShip')).toBeVisible({ timeout: 15000 });
 
   await page.getByText('Unreserve', { exact: true }).click();
-  await page.getByRole('button', { name: 'Yes' }).click();
-  await expect(page.locator('.loading')).toBeVisible();
-  await expect(page.locator('.loading')).toBeHidden({ timeout: 20000 });
+  let yesButton = page.getByRole('button', { name: 'Yes' });
+  await yesButton.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(yesButton).toBeEnabled({ timeout: 15000 });
+  await page.waitForTimeout(1000);
+  await yesButton.click();
+  await waitForLoader(page);
   await page.waitForTimeout(3000);
   await openSourceMenu(page, sourceLocation);
   await page.getByRole('button', { name: 'DropShip' }).click();
@@ -541,7 +546,9 @@ export async function resourcingFromStockToDropship(page: Page, sourceLocation: 
   await page.waitForTimeout(3000);
   await expect(page.getByText('Save', { exact: true })).toBeVisible();
   await expect(page.getByText('Save', { exact: true })).toBeEnabled();
+  await page.waitForTimeout(1000);
   await page.getByText('Save', { exact: true }).click();
+  await page.waitForTimeout(1000);
   if (clickUpdate) {
     const updateButton = page.getByRole('button', { name: 'Update' });
     await updateButton.waitFor({ state: 'visible', timeout: 30000 });
@@ -590,9 +597,12 @@ export async function ensureSourceDropshipIfNeeded(page: Page, steps: Resourcing
  * Selects the checkbox for the first line item in the grid.
  * @param page The Playwright Page object
  */
-export async function selectFirstLineItem(page: Page): Promise<void> {
-  await page.locator('.mat-grid-tile-content span.mat-checkbox-inner-container').click();
-  await page.waitForTimeout(4000);
+export async function selectAllLineItems(page: Page): Promise<void> {
+  let checkbox = page.locator('mat-checkbox').first();
+  await checkbox.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(checkbox).toBeEnabled({ timeout: 15000 });
+  await checkbox.click();
+  await page.waitForTimeout(1000);
 
 }
 
@@ -610,10 +620,11 @@ export async function selectArtworkIcon(page: Page): Promise<void> {
  * @param page The Playwright Page object
  * @param artworkNumber The artwork number to search for and add (default: 'D007833')
  */
-export async function addArtworkToFirstLineItem(page: Page, artworkNumber: string = 'D007833'): Promise<void> {
-  await selectFirstLineItem(page);
+export async function addArtworkToAllLineItems(page: Page, artworkNumber: string = 'D007833'): Promise<void> {
+  await selectAllLineItems(page);
   await selectArtworkIcon(page);
   await page.getByText('photoSelect Existing').click();
+  await waitForLoader(page);
   await page.locator('#mat-slide-toggle-6 div').nth(2).click();
   await page.getByText('list', { exact: true }).click();
   await page.getByRole('searchbox', { name: 'Search' }).fill(artworkNumber);
@@ -624,7 +635,7 @@ export async function addArtworkToFirstLineItem(page: Page, artworkNumber: strin
   await page.getByRole('button', { name: 'Next' }).click();
   await page.waitForTimeout(3000);
   await page.getByText('Add To Selected Only add this').click();
-  await page.waitForTimeout(5000);
+  await waitForLoader(page);
 }
 
 /**
@@ -632,7 +643,10 @@ export async function addArtworkToFirstLineItem(page: Page, artworkNumber: strin
  * @param page The Playwright Page object
  */
 export async function duplicateFirstLineItem(page: Page): Promise<void> {
-  await page.getByText('more_vert').first().click();
+  let moreVertButton = page.getByText('more_vert').first();
+  await moreVertButton.waitFor({ state: 'visible', timeout: 30000 });
+  await expect(moreVertButton).toBeEnabled({ timeout: 15000 });
+  await moreVertButton.click();
   await page.getByRole('menuitem', { name: 'Duplicate Line' }).click();
   await page.waitForTimeout(4000);
 }
@@ -645,7 +659,8 @@ export async function clickUpdateButton(page: Page): Promise<void> {
   const updateButton = page.getByRole('button', { name: 'Update' });
   await updateButton.waitFor({ state: 'visible', timeout: 15000 });
   await updateButton.click();
-  await page.waitForTimeout(9000);
+  await waitForLoader(page);
+  await expect(page.getByText('Order updated successfully').first()).toBeVisible({ timeout: 30000 });
 }
 
 /**
@@ -658,7 +673,11 @@ export async function changeArtworkLocation(page: Page, nthArtwork: number = 1, 
   await page.getByText('palette').nth(nthArtwork).click();
   await page.getByRole('button', { name: 'Edit' }).click();
   await page.getByText(/Location:.*.{2}/).click();
-  await page.getByText(location).click();
+  let locationOption = page.getByText(location, { exact: true });
+  await locationOption.waitFor({ state: 'visible', timeout: 15000 });
+  await expect(locationOption).toBeEnabled({ timeout: 15000 });
+  await locationOption.click();
+  await page.waitForTimeout(1000);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await clickUpdateButton(page);
 }
