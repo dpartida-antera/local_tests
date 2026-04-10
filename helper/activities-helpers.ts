@@ -28,6 +28,7 @@ export async function fillAndSaveActivity(page: Page, subject: string): Promise<
   const subjectInput = page.locator('div').filter({ hasText: /^Subject\*$/ }).getByRole('textbox').last();
   await expect(subjectInput).toBeVisible({ timeout: 30_000 });
   await expect(subjectInput).toBeEnabled({ timeout: 30_000 });
+  await subjectInput.click();
   await subjectInput.fill(subject);
 
   await page.getByRole('button', { name: 'Save' }).click();
