@@ -35,6 +35,7 @@ export async function navigateToReceivingWithRetry(page: Page): Promise<void> {
     if (error instanceof Error && error.message === 'Navigation to receiving timed out after 1 minute') {
       // Try navigating to accounts first
       await navigateToModule(page, 'accounts');
+      await page.waitForTimeout(7000); // Wait for a bit before navigating back to receiving
       // Then try receiving again
       await navigateToModule(page, 'receiving');
     } else {
