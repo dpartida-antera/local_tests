@@ -149,7 +149,7 @@ export async function searchByBillAddress(
  */
 export async function waitForLoader(page: Page, selector: string = 'mat-progress-spinner, .loader, .loading', timeout: number = 100000): Promise<void> {
   // Wait for loader to appear (indicates operation has started)
-  const loader = page.locator(selector);
+  const loader = page.locator(selector).first();
   
   let loaderWasVisible = false;
   try {
